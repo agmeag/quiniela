@@ -1,0 +1,40 @@
+version: "3.8"
+
+# ----------------------------------------------------------------
+# Quiniela 2026 — Production (Coolify / Traefik)
+# Set APP_NAME and APP_DOMAIN in your .env before deploying
+# ----------------------------------------------------------------
+
+services:
+  app-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: ${APP_NAME}-api
+    restart: unless-stopped
+    volumes:
+      - ./storage/logs:/var/www/html/storage/logs
+    environment:
+      - LOG_CHANNEL=stderr
+    env_file:
+      - .env
+    deploy:
+      resources:
+        limits:
+          cpus: '1.8'
+          memory: 1024M
+        reservations:
+          cpus: '1.5'
+          memory: 768M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${APP_NAME}-api.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.${APP_NAME}-api.entrypoints=web,websecure"
+      - "traefik.http.routers.${APP_NAME}-api.tls=true"
+      - "traefik.http.services.${APP_NAME}-api.loadbalancer.server.port=80"
+    networks:
+      - coolify
+
+networks:
+  coolify:
+    external: true

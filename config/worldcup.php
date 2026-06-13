@@ -1,0 +1,38 @@
+<?php
+
+return [
+    'api_url' => env('WORLDCUP_API_URL', 'https://worldcup26.ir'),
+    'api_key' => env('WORLDCUP_API_KEY', ''),
+    'sync_interval' => (int) env('WORLDCUP_SYNC_INTERVAL', 10),
+    'timeout' => 30,
+    'retry_times' => 3,
+    'retry_sleep' => 1000,
+
+    'team_name_map' => [
+        'México' => 'Mexico',
+        'Corea Del Sur' => 'South Korea',
+        'Sudáfrica' => 'South Africa',
+        'Rep. Checa' => 'Czech Republic',
+        'Bosnia Y Herzeg.' => 'Bosnia and Herzegovina',
+        'Canadá' => 'Canada',
+        'Estados Unidos' => 'United States',
+        'Países Bajos' => 'Netherlands',
+        'Suecia' => 'Sweden',
+        'Túnez' => 'Tunisia',
+        'Bélgica' => 'Belgium',
+        'Irán' => 'Iran',
+        'Nueva Zelanda' => 'New Zealand',
+        'Argelia' => 'Algeria',
+        'Jordania' => 'Jordan',
+        'Rep. Del Congo' => 'DR Congo',
+        'Inglaterra' => 'England',
+        'Noruega' => 'Norway',
+        'Marruecos' => 'Morocco',
+        'Haití' => 'Haiti',
+        'Escocia' => 'Scotland',
+        'Turquía' => 'Turkey',
+        'Arabia Saudita' => 'Saudi Arabia',
+        'Catar' => 'Qatar',
+        'Uzbekistán' => 'Uzbekistan',
+    ],
+];

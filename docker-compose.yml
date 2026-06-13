@@ -1,0 +1,75 @@
+version: "3.8"
+
+# ----------------------------------------------------------------
+# Quiniela 2026 — Local Development Stack
+# ----------------------------------------------------------------
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: quiniela-app
+    restart: unless-stopped
+    volumes:
+      - ./storage/logs:/var/www/html/storage/logs
+    env_file:
+      - .env
+    environment:
+      - LOG_CHANNEL=stderr
+      - DB_HOST=db
+      - REDIS_HOST=redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:80"
+    networks:
+      - quiniela
+
+  db:
+    image: postgres:16-alpine
+    container_name: quiniela-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: quiniela
+      POSTGRES_USER: quiniela
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quiniela"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - quiniela
+
+  redis:
+    image: redis:7-alpine
+    container_name: quiniela-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - quiniela
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  quiniela:
+    driver: bridge

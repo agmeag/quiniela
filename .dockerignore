@@ -1,0 +1,61 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Dependencies (rebuilt inside container)
+node_modules
+
+# Dev environment & secrets
+.env
+.env.backup
+.env.production
+.env.*.local
+
+# IDE & editors
+.idea
+.vscode
+.cursor
+.nova
+.zed
+.codex
+.phpactor.json
+
+# AI tools
+.claude
+.claude.json
+CLAUDE.md
+.aider*
+.continue/
+.copilot/
+*.ai.md
+
+# Build artifacts (rebuilt inside container)
+/public/build
+/public/hot
+/public/fonts-manifest.dev.json
+bootstrap/cache/*.php
+
+# Docker files (not needed inside image)
+docker-compose*.yml
+Dockerfile
+
+# Dev/test only
+tests
+.phpunit.cache
+.phpunit.result.cache
+phpunit.xml
+
+# Logs & storage
+storage/logs/*.log
+storage/app/imports
+storage/pail
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Docs
+*.md
+README*

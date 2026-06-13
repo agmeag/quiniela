@@ -1,0 +1,54 @@
+# Dependencies
+/node_modules
+/vendor
+
+# Build output
+/public/build
+/public/hot
+/public/storage
+/public/fonts-manifest.dev.json
+
+# Environment
+.env
+.env.backup
+.env.production
+/auth.json
+/storage/*.key
+
+# Laravel cache / generated
+/bootstrap/cache/*.php
+.phpunit.cache
+.phpunit.result.cache
+/storage/pail
+
+# Logs
+*.log
+/storage/logs/*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE & editors
+/.idea
+/.vscode
+/.cursor/
+/.nova
+/.zed
+/.codex
+/.phpactor.json
+/_ide_helper.php
+
+# AI tools
+.claude
+.claude.json
+CLAUDE.md
+.aider*
+.continue/
+.copilot/
+*.ai.md
+
+# Misc
+Homestead.json
+Homestead.yaml
+/storage/app/imports
