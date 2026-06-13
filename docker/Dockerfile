@@ -8,7 +8,7 @@ ARG ALPINE_VERSION=3.21
 
 FROM node:22-alpine AS frontend
 WORKDIR /app
-COPY package.json package-lock.json vite.config.* tsconfig.json ./
+COPY package.json package-lock.json vite.config.* tsconfig.json svelte.config.js ./
 RUN npm ci
 COPY resources ./resources
 COPY public ./public
