@@ -233,12 +233,12 @@
         <input
           id="u-name"
           type="text"
-          bind:value={$form.name}
+          bind:value={form.name}
           class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A]
             focus:outline-none focus:border-[#3554FF] transition-colors"
         />
-        {#if $form.errors.name}
-          <p class="text-xs text-red-600 mt-1">{$form.errors.name}</p>
+        {#if form.errors.name}
+          <p class="text-xs text-red-600 mt-1">{form.errors.name}</p>
         {/if}
       </div>
 
@@ -250,12 +250,12 @@
         <input
           id="u-email"
           type="email"
-          bind:value={$form.email}
+          bind:value={form.email}
           class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A]
             focus:outline-none focus:border-[#3554FF] transition-colors"
         />
-        {#if $form.errors.email}
-          <p class="text-xs text-red-600 mt-1">{$form.errors.email}</p>
+        {#if form.errors.email}
+          <p class="text-xs text-red-600 mt-1">{form.errors.email}</p>
         {/if}
       </div>
 
@@ -267,12 +267,12 @@
         <input
           id="u-password"
           type="password"
-          bind:value={$form.password}
+          bind:value={form.password}
           class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A]
             focus:outline-none focus:border-[#3554FF] transition-colors"
         />
-        {#if $form.errors.password}
-          <p class="text-xs text-red-600 mt-1">{$form.errors.password}</p>
+        {#if form.errors.password}
+          <p class="text-xs text-red-600 mt-1">{form.errors.password}</p>
         {/if}
       </div>
 
@@ -283,27 +283,27 @@
         </label>
         <select
           id="u-role"
-          bind:value={$form.role}
+          bind:value={form.role}
           class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] bg-white
             focus:outline-none focus:border-[#3554FF] transition-colors"
         >
           <option value="participant">Participante</option>
           <option value="super_admin">Super Admin</option>
         </select>
-        {#if $form.errors.role}
-          <p class="text-xs text-red-600 mt-1">{$form.errors.role}</p>
+        {#if form.errors.role}
+          <p class="text-xs text-red-600 mt-1">{form.errors.role}</p>
         {/if}
       </div>
 
       <!-- Participant link -->
-      {#if $form.role === 'participant'}
+      {#if form.role === 'participant'}
         <div>
           <label for="u-participant" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
             Vincular participante
           </label>
           <select
             id="u-participant"
-            bind:value={$form.participant_id}
+            bind:value={form.participant_id}
             class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] bg-white
               focus:outline-none focus:border-[#3554FF] transition-colors"
           >
@@ -312,8 +312,8 @@
               <option value={p.id}>{p.name}</option>
             {/each}
           </select>
-          {#if $form.errors.participant_id}
-            <p class="text-xs text-red-600 mt-1">{$form.errors.participant_id}</p>
+          {#if form.errors.participant_id}
+            <p class="text-xs text-red-600 mt-1">{form.errors.participant_id}</p>
           {/if}
           <p class="text-[10px] text-[#9CA3AF] mt-1">Al iniciar sesión, el usuario verá los pronósticos del participante vinculado.</p>
         </div>
@@ -331,11 +331,11 @@
       </button>
       <button
         onclick={(e) => submit(e as unknown as SubmitEvent)}
-        disabled={$form.processing}
+        disabled={form.processing}
         class="flex-1 bg-[#3554FF] text-white font-black text-sm py-2.5
           hover:bg-[#2340cc] transition-colors disabled:opacity-50"
       >
-        {$form.processing ? 'Guardando...' : editing ? 'Actualizar' : 'Crear usuario'}
+        {form.processing ? 'Guardando...' : editing ? 'Actualizar' : 'Crear usuario'}
       </button>
     </div>
   </div>

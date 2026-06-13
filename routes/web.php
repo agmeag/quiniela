@@ -10,13 +10,15 @@ use App\Http\Controllers\ParticipantPageController;
 use App\Http\Controllers\PodiumPageController;
 use Illuminate\Support\Facades\Route;
 
-// Public
-Route::get('/', HomeController::class)->name('home');
-Route::get('/matches', [MatchPageController::class, 'index'])->name('matches.index');
-Route::get('/matches/{match}', [MatchPageController::class, 'show'])->name('matches.show');
-Route::get('/leaderboard', LeaderboardPageController::class)->name('leaderboard');
-Route::get('/podium', PodiumPageController::class)->name('podium');
-Route::get('/participants/{slug}', ParticipantPageController::class)->name('participants.show');
+// Authenticated content
+Route::middleware('auth')->group(function () {
+    Route::get('/', HomeController::class)->name('home');
+    Route::get('/matches', [MatchPageController::class, 'index'])->name('matches.index');
+    Route::get('/matches/{match}', [MatchPageController::class, 'show'])->name('matches.show');
+    Route::get('/leaderboard', LeaderboardPageController::class)->name('leaderboard');
+    Route::get('/podium', PodiumPageController::class)->name('podium');
+    Route::get('/participants/{slug}', ParticipantPageController::class)->name('participants.show');
+});
 
 // Auth
 Route::get('/login', [LoginController::class, 'showLogin'])->name('login')->middleware('guest');

@@ -175,18 +175,18 @@
                 onchange={onFileChange}
                 class="sr-only"
               />
-              {#if $form.errors.file}
-                <p class="text-xs text-red-600 mt-1">{$form.errors.file}</p>
+              {#if form.errors.file}
+                <p class="text-xs text-red-600 mt-1">{form.errors.file}</p>
               {/if}
             </div>
 
             <button
               type="submit"
-              disabled={$form.processing || !$form.file}
+              disabled={form.processing || !form.file}
               class="w-full bg-[#3554FF] text-white font-black text-sm py-3 tracking-widest uppercase
                 hover:bg-[#2340cc] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {$form.processing ? 'Importando...' : 'Importar pronósticos'}
+              {form.processing ? 'Importando...' : 'Importar pronósticos'}
             </button>
           </form>
         </div>

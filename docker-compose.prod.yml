@@ -2,7 +2,7 @@ version: "3.8"
 
 # ----------------------------------------------------------------
 # Quiniela 2026 — Production Stack
-# Reverse proxy: Caddy (on host) → localhost:8080
+# Reverse proxy: Coolify's built-in Caddy routes to port 80 internally
 # Usage: docker compose -f docker-compose.prod.yml up -d
 # Required env vars in .env:
 #   APP_NAME, APP_KEY, DB_PASSWORD
@@ -41,8 +41,6 @@ services:
         chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache &&
         exec supervisord -n -c /var/www/html/docker/supervisord-web.conf
       "
-    ports:
-      - "127.0.0.1:8080:80"
 
   # ── Worker: horizon + scheduler + pulse ───────────────────────
   worker:

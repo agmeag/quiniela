@@ -30,9 +30,9 @@
 
     <!-- Card -->
     <form onsubmit={submit} class="bg-white p-8 space-y-5">
-      {#if $form.errors.email}
+      {#if form.errors.email}
         <div class="bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          {$form.errors.email}
+          {form.errors.email}
         </div>
       {/if}
 
@@ -44,7 +44,7 @@
           id="email"
           type="email"
           autocomplete="email"
-          bind:value={$form.email}
+          bind:value={form.email}
           class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] placeholder-[#D1D5DB]
             focus:outline-none focus:border-[#3554FF] transition-colors"
           placeholder="admin@ejemplo.com"
@@ -59,24 +59,24 @@
           id="password"
           type="password"
           autocomplete="current-password"
-          bind:value={$form.password}
+          bind:value={form.password}
           class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A]
             focus:outline-none focus:border-[#3554FF] transition-colors"
         />
       </div>
 
       <label class="flex items-center gap-2 cursor-pointer select-none">
-        <input type="checkbox" bind:checked={$form.remember} class="accent-[#3554FF]" />
+        <input type="checkbox" bind:checked={form.remember} class="accent-[#3554FF]" />
         <span class="text-sm text-[#6B7280]">Recordarme</span>
       </label>
 
       <button
         type="submit"
-        disabled={$form.processing}
+        disabled={form.processing}
         class="w-full bg-[#3554FF] text-white font-black text-sm py-3 tracking-widest uppercase
           hover:bg-[#2340cc] transition-colors disabled:opacity-60"
       >
-        {$form.processing ? 'Ingresando...' : 'Ingresar'}
+        {form.processing ? 'Ingresando...' : 'Ingresar'}
       </button>
     </form>
 
