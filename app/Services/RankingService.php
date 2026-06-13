@@ -30,7 +30,7 @@ class RankingService
 
             $correctWinner = $prediction->getWinner() === $match->getWinner();
 
-            $points = $this->calculatePoints($scoreDiff, $isExact, $correctWinner);
+            $points = $this->calculatePoints($isExact, $correctWinner, $match->stage);
 
             return [
                 'prediction' => $prediction,
@@ -117,20 +117,20 @@ class RankingService
         });
     }
 
-    private function calculatePoints(int $scoreDiff, bool $isExact, bool $correctWinner): int
+    private function calculatePoints(bool $isExact, bool $correctWinner, string $stage): int
     {
-        if ($isExact) {
-            return config('scoring.exact_score', 5);
-        }
+        $tiers   = config('scoring.tiers', []);
+        $tier    = $tiers[$stage] ?? config('scoring.default');
 
-        $nearPoints = config('scoring.near_prediction', []);
-        $points = $nearPoints[$scoreDiff] ?? 0;
+        if ($isExact) {
+            return $tier['exact_score'];
+        }
 
         if ($correctWinner) {
-            $points += config('scoring.correct_winner', 2);
+            return $tier['correct_winner'];
         }
 
-        return $points;
+        return 0;
     }
 
     public function getMatchPodium(WorldCupMatch $match, int $limit = 10): Collection

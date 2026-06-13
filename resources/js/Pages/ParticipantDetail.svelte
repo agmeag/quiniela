@@ -29,17 +29,16 @@
 
   function rowClass(row: PredictionRow): string {
     if (row.status !== 'finished') return '';
-    return row.is_exact ? 'bg-emerald-50' : '';
+    if (row.is_exact) return 'bg-emerald-50';
+    if (row.correct_winner) return 'bg-blue-50';
+    return '';
   }
 
-  function resultIcon(row: PredictionRow): string {
-    if (row.status !== 'finished') return '—';
-    return row.is_exact ? '✓' : '✗';
-  }
-
-  function resultIconClass(row: PredictionRow): string {
-    if (row.status !== 'finished') return 'text-[#D1D5DB]';
-    return row.is_exact ? 'text-emerald-600 font-black' : 'text-red-400';
+  function pointsBadge(row: PredictionRow): { label: string; cls: string } | null {
+    if (row.status !== 'finished' || row.points === 0) return null;
+    if (row.is_exact) return { label: 'Exacto', cls: 'bg-emerald-100 text-emerald-700' };
+    if (row.correct_winner) return { label: 'Ganador', cls: 'bg-blue-100 text-blue-700' };
+    return null;
   }
 </script>
 
@@ -94,12 +93,13 @@
                 <th class="px-4 py-3 text-left font-semibold tracking-widest uppercase hidden sm:table-cell">Grupo</th>
                 <th class="px-4 py-3 text-center font-semibold tracking-widest uppercase">Pronóstico</th>
                 <th class="px-4 py-3 text-center font-semibold tracking-widest uppercase">Resultado</th>
-                <th class="px-4 py-3 text-center font-semibold tracking-widest uppercase w-8"></th>
+                <th class="px-4 py-3 text-center font-semibold tracking-widest uppercase hidden sm:table-cell">Tipo</th>
                 <th class="px-4 py-3 text-right font-semibold tracking-widest uppercase">Pts</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[#F0F0F0]">
               {#each finished as row}
+                {@const badge = pointsBadge(row)}
                 <tr class={rowClass(row)}>
                   <td class="px-4 py-3 text-[#9CA3AF]">{row.correlativo}</td>
                   <td class="px-4 py-3">
@@ -114,8 +114,14 @@
                   <td class="px-4 py-3 text-center font-mono font-semibold text-[#6B7280]">
                     {row.actual_home}–{row.actual_away}
                   </td>
-                  <td class="px-4 py-3 text-center {resultIconClass(row)}">
-                    {resultIcon(row)}
+                  <td class="px-4 py-3 text-center hidden sm:table-cell">
+                    {#if badge}
+                      <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase {badge.cls}">
+                        {badge.label}
+                      </span>
+                    {:else if row.status === 'finished'}
+                      <span class="text-[#D1D5DB] text-[10px] font-bold tracking-wide uppercase">Fallo</span>
+                    {/if}
                   </td>
                   <td class="px-4 py-3 text-right font-black {row.points > 0 ? 'text-[#3554FF]' : 'text-[#9CA3AF]'}">
                     {row.points > 0 ? `+${row.points}` : '—'}

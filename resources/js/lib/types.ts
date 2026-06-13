@@ -51,11 +51,13 @@ export interface PredictionRow {
     group_name: string | null;
     match_date: string;
     status: MatchStatus;
+    stage: string;
     pred_home: number;
     pred_away: number;
     actual_home: number | null;
     actual_away: number | null;
     is_exact: boolean | null;
+    correct_winner: boolean | null;
     points: number;
 }
 

@@ -37,10 +37,14 @@ class ParticipantPageController extends Controller
                 'pred_away'    => $p->away_score,
                 'actual_home'  => $p->match->home_score,
                 'actual_away'  => $p->match->away_score,
-                'is_exact'     => $p->match->status === 'finished'
+                'is_exact'        => $p->match->status === 'finished'
                     ? ($p->home_score === $p->match->home_score && $p->away_score === $p->match->away_score)
                     : null,
-                'points'       => $rankingsMap->get($p->match_id)?->points ?? 0,
+                'correct_winner'  => $p->match->status === 'finished'
+                    ? ($p->getWinner() === $p->match->getWinner())
+                    : null,
+                'points'          => $rankingsMap->get($p->match_id)?->points ?? 0,
+                'stage'           => $p->match->stage,
             ])->values()->all();
 
         return Inertia::render('ParticipantDetail', [
