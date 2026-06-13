@@ -16,6 +16,7 @@
 
   let searchInput = $state(filters.search ?? '');
   let selectedStage = $state(filters.stage ?? 'all');
+  let viewMode = $state<'groups' | 'dates'>('groups');
 
   let searchTimer: ReturnType<typeof setTimeout>;
 
@@ -40,7 +41,29 @@
     final: 'Final',
   };
 
+  function dateKey(iso: string): string {
+    return iso.slice(0, 10);
+  }
+
+  function dateLabel(key: string): string {
+    const today = new Date();
+    const todayKey = today.toISOString().slice(0, 10);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const tomorrowKey = tomorrow.toISOString().slice(0, 10);
+
+    if (key === todayKey) return 'Hoy';
+    if (key === tomorrowKey) return 'Mañana';
+
+    return new Intl.DateTimeFormat('es-MX', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    }).format(new Date(key + 'T12:00:00'));
+  }
+
   const live = $derived(matches.filter(m => m.status === 'live'));
+
   const grouped = $derived(
     Object.entries(
       matches.reduce<Record<string, Match[]>>((acc, m) => {
@@ -50,6 +73,17 @@
       }, {})
     ).sort(([a], [b]) => a.localeCompare(b))
   );
+
+  const upcomingByDate = $derived(() => {
+    const upcoming = matches.filter(m => m.status === 'notstarted' || m.status === 'live');
+    const byDate: Record<string, Match[]> = {};
+    for (const m of upcoming) {
+      if (!m.match_date) continue;
+      const key = dateKey(m.match_date);
+      (byDate[key] ??= []).push(m);
+    }
+    return Object.entries(byDate).sort(([a], [b]) => a.localeCompare(b));
+  });
 </script>
 
 <svelte:head>
@@ -76,74 +110,127 @@
   </div>
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Filters -->
-    <div class="flex flex-col sm:flex-row gap-3 mb-8">
-      <input
-        type="text"
-        placeholder="Buscar equipo..."
-        bind:value={searchInput}
-        oninput={onSearch}
-        class="flex-1 border border-[#E0E0E0] bg-white px-4 py-2.5 text-sm text-[#081B6A] placeholder-[#9CA3AF] focus:outline-none focus:border-[#3554FF]"
-      />
-      <div class="flex gap-2 flex-wrap">
+    <!-- View toggle + filters -->
+    <div class="flex flex-col gap-4 mb-8">
+      <!-- View mode toggle -->
+      <div class="flex gap-0 border border-[#E0E0E0] w-fit">
         <button
-          onclick={() => { selectedStage = 'all'; applyFilters(); }}
-          class="px-4 py-2 text-xs font-bold tracking-wide border transition-colors
-            {selectedStage === 'all'
-              ? 'bg-[#081B6A] text-white border-[#081B6A]'
-              : 'bg-white text-[#081B6A] border-[#E0E0E0] hover:border-[#081B6A]'}"
+          onclick={() => viewMode = 'groups'}
+          class="px-4 py-2 text-xs font-bold tracking-wide transition-colors
+            {viewMode === 'groups'
+              ? 'bg-[#081B6A] text-white'
+              : 'bg-white text-[#081B6A] hover:bg-[#F6F6F6]'}"
         >
-          Todos
+          Por grupo
         </button>
-        {#each stages as stage}
-          <button
-            onclick={() => { selectedStage = stage; applyFilters(); }}
-            class="px-4 py-2 text-xs font-bold tracking-wide border transition-colors
-              {selectedStage === stage
-                ? 'bg-[#081B6A] text-white border-[#081B6A]'
-                : 'bg-white text-[#081B6A] border-[#E0E0E0] hover:border-[#081B6A]'}"
-          >
-            {stageLabels[stage] ?? stage}
-          </button>
-        {/each}
+        <button
+          onclick={() => { viewMode = 'dates'; selectedStage = 'all'; applyFilters(); }}
+          class="px-4 py-2 text-xs font-bold tracking-wide border-l border-[#E0E0E0] transition-colors
+            {viewMode === 'dates'
+              ? 'bg-[#081B6A] text-white'
+              : 'bg-white text-[#081B6A] hover:bg-[#F6F6F6]'}"
+        >
+          Por fecha
+        </button>
       </div>
+
+      <!-- Stage filters (only in groups view) -->
+      {#if viewMode === 'groups'}
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            placeholder="Buscar equipo..."
+            bind:value={searchInput}
+            oninput={onSearch}
+            class="flex-1 border border-[#E0E0E0] bg-white px-4 py-2.5 text-sm text-[#081B6A] placeholder-[#9CA3AF] focus:outline-none focus:border-[#3554FF]"
+          />
+          <div class="flex gap-2 flex-wrap">
+            <button
+              onclick={() => { selectedStage = 'all'; applyFilters(); }}
+              class="px-4 py-2 text-xs font-bold tracking-wide border transition-colors
+                {selectedStage === 'all'
+                  ? 'bg-[#081B6A] text-white border-[#081B6A]'
+                  : 'bg-white text-[#081B6A] border-[#E0E0E0] hover:border-[#081B6A]'}"
+            >
+              Todos
+            </button>
+            {#each stages as stage}
+              <button
+                onclick={() => { selectedStage = stage; applyFilters(); }}
+                class="px-4 py-2 text-xs font-bold tracking-wide border transition-colors
+                  {selectedStage === stage
+                    ? 'bg-[#081B6A] text-white border-[#081B6A]'
+                    : 'bg-white text-[#081B6A] border-[#E0E0E0] hover:border-[#081B6A]'}"
+              >
+                {stageLabels[stage] ?? stage}
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/if}
     </div>
 
-    <!-- Live matches first -->
-    {#if live.length > 0 && selectedStage === 'all' && !searchInput}
-      <div class="mb-10">
-        <div class="flex items-center gap-3 mb-4">
-          <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-          <p class="text-[10px] font-bold tracking-widest uppercase text-red-500">En vivo ahora</p>
+    {#if viewMode === 'dates'}
+      <!-- ── By date view: upcoming + live only ─────────────────── -->
+      {#if upcomingByDate().length === 0}
+        <div class="bg-white border border-[#E0E0E0] p-16 text-center">
+          <p class="text-[#9CA3AF] font-medium">No hay partidos próximos</p>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {#each live as match}
-            <MatchCard {match} />
-          {/each}
-        </div>
-      </div>
-    {/if}
-
-    <!-- Grouped matches -->
-    {#if matches.length === 0}
-      <div class="bg-white border border-[#E0E0E0] p-16 text-center">
-        <p class="text-[#9CA3AF] font-medium">No se encontraron partidos</p>
-      </div>
+      {:else}
+        {#each upcomingByDate() as [key, dayMatches]}
+          <div class="mb-10">
+            <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-4 flex items-center gap-3">
+              <span class="h-px flex-1 bg-[#E0E0E0]"></span>
+              {dateLabel(key)}
+              <span class="text-[#CDCDCD] font-normal normal-case tracking-normal">— {dayMatches.length} partido{dayMatches.length > 1 ? 's' : ''}</span>
+              <span class="h-px flex-1 bg-[#E0E0E0]"></span>
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {#each dayMatches as match}
+                <MatchCard {match} />
+              {/each}
+            </div>
+          </div>
+        {/each}
+      {/if}
     {:else}
-      {#each grouped as [groupName, groupMatches]}
+      <!-- ── By group view ──────────────────────────────────────── -->
+
+      <!-- Live matches first -->
+      {#if live.length > 0 && selectedStage === 'all' && !searchInput}
         <div class="mb-10">
-          <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-4 flex items-center gap-3">
-            <span class="h-px flex-1 bg-[#E0E0E0]"></span>
-            {groupName}
-            <span class="h-px flex-1 bg-[#E0E0E0]"></span>
-          </p>
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+            <p class="text-[10px] font-bold tracking-widest uppercase text-red-500">En vivo ahora</p>
+          </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {#each groupMatches.filter(m => m.status !== 'live' || selectedStage !== 'all' || !!searchInput) as match}
+            {#each live as match}
               <MatchCard {match} />
             {/each}
           </div>
         </div>
-      {/each}
+      {/if}
+
+      {#if matches.length === 0}
+        <div class="bg-white border border-[#E0E0E0] p-16 text-center">
+          <p class="text-[#9CA3AF] font-medium">No se encontraron partidos</p>
+        </div>
+      {:else}
+        {#each grouped as [groupName, groupMatches]}
+          <div class="mb-10">
+            <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-4 flex items-center gap-3">
+              <span class="h-px flex-1 bg-[#E0E0E0]"></span>
+              {groupName}
+              <span class="h-px flex-1 bg-[#E0E0E0]"></span>
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {#each groupMatches.filter(m => m.status !== 'live' || selectedStage !== 'all' || !!searchInput) as match}
+                <MatchCard {match} />
+              {/each}
+            </div>
+          </div>
+        {/each}
+      {/if}
     {/if}
   </div>
 </div>

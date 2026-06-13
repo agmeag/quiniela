@@ -1,7 +1,19 @@
 #----------------------------------------------------------------
 # Quiniela 2026 - Production Dockerfile
-# PHP 8.4 on Alpine 3.21
+# Stage 1: Node — build frontend assets
+# Stage 2: PHP 8.4 on Alpine 3.21 — runtime
 #----------------------------------------------------------------
+
+FROM node:22-alpine AS frontend
+WORKDIR /app
+COPY package.json package-lock.json vite.config.* tsconfig.json ./
+RUN npm ci
+COPY resources ./resources
+COPY public ./public
+RUN npm run build
+
+#----------------------------------------------------------------
+
 ARG ALPINE_VERSION=3.21
 FROM alpine:${ALPINE_VERSION}
 
@@ -81,6 +93,9 @@ COPY ./docker/post-startup.sh /var/www/html/docker/post-startup.sh
 
 # Copy application code with proper ownership
 COPY --chown=www-data:www-data . .
+
+# Copy frontend build from Node stage
+COPY --from=frontend --chown=www-data:www-data /app/public/build ./public/build
 
 # Set up directories and permissions
 RUN mkdir -p \

@@ -1,4 +1,4 @@
-export type MatchStatus = 'scheduled' | 'live' | 'finished';
+export type MatchStatus = 'notstarted' | 'live' | 'finished';
 export type Stage = 'group' | 'round_of_32' | 'round_of_16' | 'quarter' | 'semi' | 'final';
 
 export interface Match {
