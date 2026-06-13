@@ -4,6 +4,8 @@
 # Stage 2: PHP 8.4 on Alpine 3.21 — runtime
 #----------------------------------------------------------------
 
+ARG ALPINE_VERSION=3.21
+
 FROM node:22-alpine AS frontend
 WORKDIR /app
 COPY package.json package-lock.json vite.config.* tsconfig.json ./
@@ -14,7 +16,6 @@ RUN npm run build
 
 #----------------------------------------------------------------
 
-ARG ALPINE_VERSION=3.21
 FROM alpine:${ALPINE_VERSION}
 
 LABEL maintainer="quiniela2026"
