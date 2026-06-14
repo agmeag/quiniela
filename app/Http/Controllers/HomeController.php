@@ -34,7 +34,7 @@ class HomeController extends Controller
             $participantsCount = Participant::count();
 
             $liveMatches = WorldCupMatch::where('status', 'live')->orderBy('match_date')->limit(4)->get();
-            $upcomingMatches = WorldCupMatch::where('status', 'scheduled')->orderBy('match_date')->limit(4)->get();
+            $upcomingMatches = WorldCupMatch::where('status', 'notstarted')->orderBy('match_date')->limit(4)->get();
             $recentMatches = WorldCupMatch::where('status', 'finished')->orderBy('match_date', 'desc')->limit(4)->get();
 
             $featuredSource = $liveMatches->isNotEmpty() ? $liveMatches
@@ -49,7 +49,7 @@ class HomeController extends Controller
                 'away_team_flag' => $m->away_team_flag,
                 'home_score' => $m->home_score,
                 'away_score' => $m->away_score,
-                'match_date' => $m->match_date?->toIso8601String(),
+                'match_date' => $m->match_date?->format('Y-m-d H:i:s'),
                 'stage' => $m->stage,
                 'group_name' => $m->group_name,
                 'status' => $m->status,

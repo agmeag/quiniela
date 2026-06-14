@@ -3,15 +3,20 @@
   import MatchCard from '../Components/MatchCard.svelte';
   import type { Match } from '../lib/types';
   import { router } from '@inertiajs/svelte';
+  import { formatDate } from '../lib/utils';
 
   let {
     matches,
     stages,
     filters,
+    today_key,
+    tomorrow_key,
   }: {
     matches: Match[];
     stages: string[];
     filters: { stage: string; search: string };
+    today_key: string;
+    tomorrow_key: string;
   } = $props();
 
   let searchInput = $state(filters.search ?? '');
@@ -41,25 +46,15 @@
     final: 'Final',
   };
 
-  function dateKey(iso: string): string {
-    return iso.slice(0, 10);
+  // match_date is "YYYY-MM-DD HH:MM:SS" in El Salvador time from the backend
+  function dateKey(svStr: string): string {
+    return svStr.slice(0, 10);
   }
 
   function dateLabel(key: string): string {
-    const today = new Date();
-    const todayKey = today.toISOString().slice(0, 10);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    const tomorrowKey = tomorrow.toISOString().slice(0, 10);
-
-    if (key === todayKey) return 'Hoy';
-    if (key === tomorrowKey) return 'Mañana';
-
-    return new Intl.DateTimeFormat('es-MX', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-    }).format(new Date(key + 'T12:00:00'));
+    if (key === today_key) return 'Hoy';
+    if (key === tomorrow_key) return 'Mañana';
+    return formatDate(key + ' 12:00:00').split('·')[0].trim();
   }
 
   const live = $derived(matches.filter(m => m.status === 'live'));

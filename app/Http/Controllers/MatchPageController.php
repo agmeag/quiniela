@@ -42,7 +42,7 @@ class MatchPageController extends Controller
                 'away_team_flag' => $m->away_team_flag,
                 'home_score' => $m->home_score,
                 'away_score' => $m->away_score,
-                'match_date' => $m->match_date?->toIso8601String(),
+                'match_date' => $m->match_date?->format('Y-m-d H:i:s'),
                 'stage' => $m->stage,
                 'group_name' => $m->group_name,
                 'venue' => $m->venue,
@@ -55,10 +55,14 @@ class MatchPageController extends Controller
             WorldCupMatch::select('stage')->distinct()->pluck('stage')->sort()->values()->all()
         );
 
+        $today = now();
+
         return Inertia::render('Matches', [
-            'matches' => $matches,
-            'stages' => $stages,
-            'filters' => ['stage' => $stage, 'search' => $search],
+            'matches'      => $matches,
+            'stages'       => $stages,
+            'filters'      => ['stage' => $stage, 'search' => $search],
+            'today_key'    => $today->format('Y-m-d'),
+            'tomorrow_key' => $today->copy()->addDay()->format('Y-m-d'),
         ]);
     }
 
@@ -126,7 +130,7 @@ class MatchPageController extends Controller
                     'away_score'     => $match->away_score,
                     'home_score_ht'  => $match->home_score_ht,
                     'away_score_ht'  => $match->away_score_ht,
-                    'match_date'     => $match->match_date?->toIso8601String(),
+                    'match_date'     => $match->match_date?->format('Y-m-d H:i:s'),
                     'last_synced_at' => $match->last_synced_at?->toIso8601String(),
                     'stage'          => $match->stage,
                     'group_name'     => $match->group_name,

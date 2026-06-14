@@ -75,15 +75,27 @@ class MatchSyncService
         try {
             $matchData = MatchData::fromApiResponse($apiData);
 
-            if ($matchData->correlativo < 1 || $matchData->correlativo > 72) {
-                return false;
+            // 1. Fast path: already identified in a previous sync
+            $match = WorldCupMatch::where('external_id', $matchData->externalId)->first();
+
+            // 2. Identify by translated team names (API sends English, DB stores Spanish)
+            if (! $match) {
+                $homeEs = $this->translateTeam($matchData->homeTeam);
+                $awayEs = $this->translateTeam($matchData->awayTeam);
+
+                if ($homeEs && $awayEs) {
+                    $match = WorldCupMatch::where('home_team', $homeEs)
+                        ->where('away_team', $awayEs)
+                        ->first();
+                }
             }
 
-            // Match by correlativo (API id == our correlativo)
-            $match = WorldCupMatch::where('correlativo', $matchData->correlativo)->first();
-
             if (! $match) {
-                Log::warning("No match found for correlativo {$matchData->correlativo}");
+                Log::warning('No match found for API entry', [
+                    'api_id'    => $matchData->externalId,
+                    'home_team' => $matchData->homeTeam,
+                    'away_team' => $matchData->awayTeam,
+                ]);
                 return false;
             }
 
@@ -110,5 +122,69 @@ class MatchSyncService
 
             return false;
         }
+    }
+
+    private function translateTeam(string $name): ?string
+    {
+        static $map = [
+            'Mexico'                       => 'México',
+            'South Africa'                 => 'Sudáfrica',
+            'South Korea'                  => 'Corea Del Sur',
+            'Czech Republic'               => 'Rep. Checa',
+            'Czechia'                      => 'Rep. Checa',
+            'Canada'                       => 'Canadá',
+            'Bosnia and Herzegovina'       => 'Bosnia Y Herzeg.',
+            'Bosnia & Herzegovina'         => 'Bosnia Y Herzeg.',
+            'United States'                => 'Estados Unidos',
+            'USA'                          => 'Estados Unidos',
+            'Qatar'                        => 'Catar',
+            'Switzerland'                  => 'Suiza',
+            'Brazil'                       => 'Brasil',
+            'Morocco'                      => 'Marruecos',
+            'Haiti'                        => 'Haití',
+            'Scotland'                     => 'Escocia',
+            'Australia'                    => 'Australia',
+            'Turkey'                       => 'Turquía',
+            'Türkiye'                      => 'Turquía',
+            'Germany'                      => 'Alemania',
+            'Curaçao'                      => 'Curazao',
+            'Curacao'                      => 'Curazao',
+            'Netherlands'                  => 'Países Bajos',
+            'Japan'                        => 'Japón',
+            'Ivory Coast'                  => 'Costa De Marfil',
+            "Côte d'Ivoire"                => 'Costa De Marfil',
+            "Cote d'Ivoire"                => 'Costa De Marfil',
+            'Ecuador'                      => 'Ecuador',
+            'Sweden'                       => 'Suecia',
+            'Tunisia'                      => 'Túnez',
+            'Spain'                        => 'España',
+            'Cape Verde'                   => 'Cabo Verde',
+            'Belgium'                      => 'Bélgica',
+            'Egypt'                        => 'Egipto',
+            'Saudi Arabia'                 => 'Arabia Saudita',
+            'Uruguay'                      => 'Uruguay',
+            'Iran'                         => 'Irán',
+            'New Zealand'                  => 'Nueva Zelanda',
+            'France'                       => 'Francia',
+            'Senegal'                      => 'Senegal',
+            'Iraq'                         => 'Irak',
+            'Norway'                       => 'Noruega',
+            'Argentina'                    => 'Argentina',
+            'Algeria'                      => 'Argelia',
+            'Austria'                      => 'Austria',
+            'Jordan'                       => 'Jordania',
+            'Portugal'                     => 'Portugal',
+            'DR Congo'                     => 'Rep. Del Congo',
+            'Congo DR'                     => 'Rep. Del Congo',
+            'Democratic Republic of Congo' => 'Rep. Del Congo',
+            'England'                      => 'Inglaterra',
+            'Croatia'                      => 'Croacia',
+            'Ghana'                        => 'Ghana',
+            'Panama'                       => 'Panamá',
+            'Uzbekistan'                   => 'Uzbekistán',
+            'Colombia'                     => 'Colombia',
+        ];
+
+        return $map[$name] ?? null;
     }
 }

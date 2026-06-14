@@ -30,7 +30,7 @@ class PodiumPageController extends Controller
                     'home_team'    => $p->match->home_team,
                     'away_team'    => $p->match->away_team,
                     'group_name'   => $p->match->group_name,
-                    'match_date'   => $p->match->match_date,
+                    'match_date'   => $p->match->match_date?->format('Y-m-d H:i:s'),
                     'status'       => $p->match->status,
                     'pred_home'    => $p->home_score,
                     'pred_away'    => $p->away_score,

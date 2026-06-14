@@ -28,7 +28,7 @@ readonly class MatchData
         $finished = strtoupper($data['finished'] ?? 'FALSE') === 'TRUE';
         $timeElapsed = trim($data['time_elapsed'] ?? '');
 
-        $status = 'scheduled';
+        $status = 'notstarted';
         $minute = null;
 
         if ($finished || $timeElapsed === 'finished') {
@@ -38,10 +38,10 @@ readonly class MatchData
             $minute = is_numeric($timeElapsed) ? (int) $timeElapsed : null;
         }
 
-        // Scores — null if not started, int if has score
+        // Scores — only read when the match is live or finished
         $homeScore = null;
         $awayScore = null;
-        if ($status !== 'scheduled') {
+        if ($status === 'live' || $status === 'finished') {
             $homeScore = is_numeric($data['home_score'] ?? null) ? (int) $data['home_score'] : null;
             $awayScore = is_numeric($data['away_score'] ?? null) ? (int) $data['away_score'] : null;
         }
