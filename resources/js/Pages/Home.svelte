@@ -8,10 +8,12 @@
     top_participants,
     featured_matches,
     has_live,
+    participants_count,
   }: {
     top_participants: Participant[];
     featured_matches: Match[];
     has_live: boolean;
+    participants_count: number;
   } = $props();
 
   const podiumOrder = [2, 1, 3];
@@ -39,7 +41,7 @@
           <span class="text-[#3554FF]">2026</span>
         </h1>
         <p class="text-white/60 text-lg leading-relaxed">
-          {top_participants.length} participantes. 72 partidos. Cada gol importa.
+          {participants_count} participantes. 72 partidos. Cada gol importa.
         </p>
       </div>
     </div>

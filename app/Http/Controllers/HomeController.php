@@ -31,6 +31,8 @@ class HomeController extends Controller
                 ->values()
                 ->all();
 
+            $participantsCount = Participant::count();
+
             $liveMatches = WorldCupMatch::where('status', 'live')->orderBy('match_date')->limit(4)->get();
             $upcomingMatches = WorldCupMatch::where('status', 'scheduled')->orderBy('match_date')->limit(4)->get();
             $recentMatches = WorldCupMatch::where('status', 'finished')->orderBy('match_date', 'desc')->limit(4)->get();
@@ -59,6 +61,7 @@ class HomeController extends Controller
                 'top_participants' => $topParticipants,
                 'featured_matches' => $featuredSource->map($serializeMatch)->values()->all(),
                 'has_live' => $liveMatches->isNotEmpty(),
+                'participants_count' => $participantsCount,
             ];
         });
 
