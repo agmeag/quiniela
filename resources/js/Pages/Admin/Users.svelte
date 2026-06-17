@@ -5,7 +5,7 @@
     id: number;
     name: string;
     email: string;
-    role: 'super_admin' | 'participant';
+    role: 'super_admin' | 'admin' | 'participant';
     participant_id: number | null;
     participant_name: string | null;
     participant_slug: string | null;
@@ -31,7 +31,7 @@
     name: '',
     email: '',
     password: '',
-    role: 'participant' as 'super_admin' | 'participant',
+    role: 'participant' as 'super_admin' | 'admin' | 'participant',
     participant_id: null as number | null,
   });
 
@@ -78,13 +78,17 @@
     router.delete(`/admin/users/${user.id}`);
   }
 
-  const roleLabel = (role: string) =>
-    role === 'super_admin' ? 'Super Admin' : 'Participante';
+  const roleLabel = (role: string) => {
+    if (role === 'super_admin') return 'Super Admin';
+    if (role === 'admin')       return 'Admin';
+    return 'Participante';
+  };
 
-  const roleBadge = (role: string) =>
-    role === 'super_admin'
-      ? 'bg-[#081B6A] text-white'
-      : 'bg-[#F0F0F0] text-[#6B7280]';
+  const roleBadge = (role: string) => {
+    if (role === 'super_admin') return 'bg-[#081B6A] text-white';
+    if (role === 'admin')       return 'bg-[#3554FF] text-white';
+    return 'bg-[#F0F0F0] text-[#6B7280]';
+  };
 </script>
 
 <svelte:head>
@@ -105,6 +109,7 @@
         <span class="text-white/20 hidden sm:block">|</span>
         <div class="flex items-center gap-4 text-xs font-semibold tracking-wide">
           <a href="/admin" class="text-white/60 hover:text-white transition-colors">Dashboard</a>
+          <a href="/admin/matches" class="text-white/60 hover:text-white transition-colors">Partidos</a>
           <span class="text-[#3554FF]">Usuarios</span>
         </div>
       </div>
@@ -288,6 +293,7 @@
             focus:outline-none focus:border-[#3554FF] transition-colors"
         >
           <option value="participant">Participante</option>
+          <option value="admin">Admin</option>
           <option value="super_admin">Super Admin</option>
         </select>
         {#if form.errors.role}

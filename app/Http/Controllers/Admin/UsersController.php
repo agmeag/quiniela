@@ -46,7 +46,7 @@ class UsersController extends Controller
             'name'           => ['required', 'string', 'max:255'],
             'email'          => ['required', 'email', 'unique:users,email'],
             'password'       => ['required', 'string', 'min:8'],
-            'role'           => ['required', Rule::in(['super_admin', 'participant'])],
+            'role'           => ['required', Rule::in(['super_admin', 'admin', 'participant'])],
             'participant_id' => ['nullable', 'exists:participants,id'],
         ]);
 
@@ -61,7 +61,7 @@ class UsersController extends Controller
             'name'           => ['required', 'string', 'max:255'],
             'email'          => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password'       => ['nullable', 'string', 'min:8'],
-            'role'           => ['required', Rule::in(['super_admin', 'participant'])],
+            'role'           => ['required', Rule::in(['super_admin', 'admin', 'participant'])],
             'participant_id' => ['nullable', 'exists:participants,id'],
         ]);
 
