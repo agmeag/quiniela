@@ -30,11 +30,9 @@ class SyncMatchesJob implements ShouldQueue
         $log = $syncService->sync();
 
         if ($log->status === 'success' && $log->matches_updated > 0) {
-            $liveMatches = WorldCupMatch::where('status', '!=', 'scheduled')
-                ->whereNotNull('home_score')
-                ->get();
+            $finishedMatches = WorldCupMatch::where('status', 'finished')->get();
 
-            foreach ($liveMatches as $match) {
+            foreach ($finishedMatches as $match) {
                 $rankingService->recalculateMatchRankings($match);
             }
 

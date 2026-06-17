@@ -15,7 +15,7 @@ class RankingService
 {
     public function recalculateMatchRankings(WorldCupMatch $match): void
     {
-        if (! $match->hasScore()) {
+        if ($match->status !== 'finished' || ! $match->hasScore()) {
             return;
         }
 
