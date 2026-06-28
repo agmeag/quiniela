@@ -47,7 +47,7 @@
 
         {#if auth.user}
           <span class="w-px h-5 bg-[#E0E0E0] mx-2"></span>
-          {#if auth.user.role === 'super_admin'}
+          {#if auth.user.role === 'super_admin' || auth.user.role === 'admin'}
             <a
               href="/admin"
               class="px-4 py-2 text-sm font-semibold tracking-wide transition-colors
@@ -55,12 +55,13 @@
             >
               Admin
             </a>
-          {:else if auth.user.participant_slug}
+          {:else if auth.user.role === 'participant'}
             <a
-              href="/participants/{auth.user.participant_slug}"
-              class="px-4 py-2 text-sm font-semibold tracking-wide transition-colors text-[#081B6A] hover:text-[#3554FF]"
+              href="/mis-predicciones"
+              class="px-4 py-2 text-sm font-semibold tracking-wide transition-colors
+                {isActive('/mis-predicciones') ? 'text-[#3554FF] border-b-2 border-[#3554FF]' : 'text-[#081B6A] hover:text-[#3554FF]'}"
             >
-              Mis pronósticos
+              Mis predicciones
             </a>
           {/if}
           <form method="post" action="/logout" class="inline">
@@ -103,7 +104,7 @@
 
       {#if auth.user}
         <div class="border-t border-[#F0F0F0]">
-          {#if auth.user.role === 'super_admin'}
+          {#if auth.user.role === 'super_admin' || auth.user.role === 'admin'}
             <a
               href="/admin"
               onclick={() => menuOpen = false}
@@ -111,13 +112,13 @@
             >
               Admin
             </a>
-          {:else if auth.user.participant_slug}
+          {:else if auth.user.role === 'participant'}
             <a
-              href="/participants/{auth.user.participant_slug}"
+              href="/mis-predicciones"
               onclick={() => menuOpen = false}
               class="block px-6 py-4 text-sm font-semibold text-[#081B6A] hover:bg-[#F6F6F6] hover:text-[#3554FF]"
             >
-              Mis pronósticos
+              Mis predicciones
             </a>
           {/if}
           <form method="post" action="/logout">

@@ -30,7 +30,10 @@ class SyncMatchesJob implements ShouldQueue
         $log = $syncService->sync();
 
         if ($log->status === 'success' && $log->matches_updated > 0) {
-            $finishedMatches = WorldCupMatch::where('status', 'finished')->get();
+            // Only recalculate newly finished matches (those without existing rankings)
+            $finishedMatches = WorldCupMatch::where('status', 'finished')
+                ->whereDoesntHave('matchRankings')
+                ->get();
 
             foreach ($finishedMatches as $match) {
                 $rankingService->recalculateMatchRankings($match);

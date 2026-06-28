@@ -38,4 +38,9 @@ class Participant extends Model
     {
         return $this->hasOne(LeaderboardEntry::class);
     }
+
+    public function user(): HasOne
+    {
+        return $this->hasOne(User::class);
+    }
 }

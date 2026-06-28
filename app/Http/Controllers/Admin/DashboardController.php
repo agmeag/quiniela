@@ -23,11 +23,14 @@ class DashboardController extends Controller
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
-                'participants'  => Participant::count(),
-                'predictions'   => Prediction::count(),
-                'last_sync'     => $lastSync?->created_at,
-                'last_import'   => $lastImport?->created_at,
-                'import_result' => $lastImport?->meta,
+                'participants'             => Participant::count(),
+                'predictions'              => Prediction::count(),
+                'last_sync'                => $lastSync?->created_at,
+                'last_import'              => $lastImport?->created_at,
+                'import_result'            => $lastImport?->meta,
+                'participants_without_users' => \App\Models\Participant::whereNotNull('email')
+                    ->whereDoesntHave('user')
+                    ->count(),
             ],
         ]);
     }

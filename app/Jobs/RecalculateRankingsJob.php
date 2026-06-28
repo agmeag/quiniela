@@ -30,7 +30,10 @@ class RecalculateRankingsJob implements ShouldQueue
                 $rankingService->recalculateMatchRankings($match);
             }
         } else {
-            $matches = WorldCupMatch::where('status', 'finished')->get();
+            // Only recalculate newly finished matches (those without existing rankings)
+            $matches = WorldCupMatch::where('status', 'finished')
+                ->whereDoesntHave('matchRankings')
+                ->get();
             foreach ($matches as $match) {
                 $rankingService->recalculateMatchRankings($match);
             }

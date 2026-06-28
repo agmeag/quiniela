@@ -7,6 +7,7 @@ use App\Models\WorldCupMatch;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,12 +29,13 @@ class MatchesController extends Controller
                 'group_name'     => $m->group_name,
                 'stage'          => $m->stage,
                 'status'         => $m->status,
+                'external_id'    => $m->external_id,
             ])->values()->all();
 
         return Inertia::render('Admin/Matches', ['matches' => $matches]);
     }
 
-    public function update(Request $request, WorldCupMatch $match): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'home_team'      => ['required', 'string', 'max:100'],
@@ -42,6 +44,37 @@ class MatchesController extends Controller
             'away_team_flag' => ['nullable', 'string', 'max:20'],
             'match_date'     => ['required', 'date_format:Y-m-d H:i:s'],
             'venue'          => ['nullable', 'string', 'max:200'],
+            'stage'          => ['required', Rule::in(['group', 'round_of_32', 'round_of_16', 'quarter', 'semi', 'third_place', 'final'])],
+            'group_name'     => ['nullable', 'required_if:stage,group', 'string', 'max:100'],
+            'external_id'    => ['nullable', 'string', 'max:50', Rule::unique('matches', 'external_id')],
+        ]);
+
+        $data['correlativo'] = (WorldCupMatch::max('correlativo') ?? 0) + 1;
+        $data['status']      = 'notstarted';
+
+        WorldCupMatch::create($data);
+        Cache::tags(['matches'])->flush();
+
+        return back()->with('success', 'Partido creado correctamente.');
+    }
+
+    public function update(Request $request, WorldCupMatch $match): RedirectResponse
+    {
+        // Only super_admin can edit finished matches
+        if ($match->status === 'finished' && ! $request->user()->isSuperAdmin()) {
+            abort(403, 'Solo el super admin puede editar partidos finalizados.');
+        }
+
+        $data = $request->validate([
+            'home_team'      => ['required', 'string', 'max:100'],
+            'home_team_flag' => ['nullable', 'string', 'max:20'],
+            'away_team'      => ['required', 'string', 'max:100'],
+            'away_team_flag' => ['nullable', 'string', 'max:20'],
+            'match_date'     => ['required', 'date_format:Y-m-d H:i:s'],
+            'venue'          => ['nullable', 'string', 'max:200'],
+            'stage'          => ['required', Rule::in(['group', 'round_of_32', 'round_of_16', 'quarter', 'semi', 'third_place', 'final'])],
+            'group_name'     => ['nullable', 'required_if:stage,group', 'string', 'max:100'],
+            'external_id'    => ['nullable', 'string', 'max:50', Rule::unique('matches', 'external_id')->ignore($match->id)],
         ]);
 
         $match->update($data);

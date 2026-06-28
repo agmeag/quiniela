@@ -17,11 +17,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
+            \App\Http\Middleware\EnsurePasswordChanged::class,
         ]);
 
         $middleware->alias([
-            'superadmin' => \App\Http\Middleware\EnsureSuperAdmin::class,
-            'admin'      => \App\Http\Middleware\EnsureAdmin::class,
+            'superadmin'      => \App\Http\Middleware\EnsureSuperAdmin::class,
+            'admin'           => \App\Http\Middleware\EnsureAdmin::class,
+            'password.changed'=> \App\Http\Middleware\EnsurePasswordChanged::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

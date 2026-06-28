@@ -9,6 +9,7 @@
     participant_id: number | null;
     participant_name: string | null;
     participant_slug: string | null;
+    must_change_password: boolean;
   };
 
   type ParticipantOption = { id: number; name: string; slug: string };
@@ -23,7 +24,7 @@
 
   const page = usePage();
 
-  // Panel state
+  // ── Edit / Create panel ───────────────────────────────────────
   let panelOpen = $state(false);
   let editing = $state<UserRow | null>(null);
 
@@ -33,6 +34,7 @@
     password: '',
     role: 'participant' as 'super_admin' | 'admin' | 'participant',
     participant_id: null as number | null,
+    must_change_password: false,
   });
 
   function openCreate() {
@@ -49,6 +51,7 @@
     form.password = '';
     form.role = user.role;
     form.participant_id = user.participant_id;
+    form.must_change_password = user.must_change_password;
     form.clearErrors();
     panelOpen = true;
   }
@@ -78,6 +81,35 @@
     router.delete(`/admin/users/${user.id}`);
   }
 
+  // ── Reset password panel ──────────────────────────────────────
+  let resetPanelOpen = $state(false);
+  let resetTarget = $state<UserRow | null>(null);
+
+  const resetForm = useForm({ password: '' });
+
+  function openReset(user: UserRow) {
+    resetTarget = user;
+    resetForm.reset();
+    resetForm.clearErrors();
+    resetPanelOpen = true;
+  }
+
+  function closeReset() {
+    resetPanelOpen = false;
+    resetTarget = null;
+    resetForm.reset();
+    resetForm.clearErrors();
+  }
+
+  function submitReset(e: SubmitEvent) {
+    e.preventDefault();
+    if (!resetTarget) return;
+    resetForm.post(`/admin/users/${resetTarget.id}/reset-password`, {
+      onSuccess: closeReset,
+    });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
   const roleLabel = (role: string) => {
     if (role === 'super_admin') return 'Super Admin';
     if (role === 'admin')       return 'Admin';
@@ -163,7 +195,14 @@
         <tbody class="divide-y divide-[#F0F0F0]">
           {#each users as user}
             <tr class="hover:bg-[#FAFAFA] transition-colors">
-              <td class="px-5 py-3 font-semibold text-[#081B6A]">{user.name}</td>
+              <td class="px-5 py-3">
+                <div class="font-semibold text-[#081B6A]">{user.name}</div>
+                {#if user.must_change_password}
+                  <span class="inline-block mt-0.5 px-1.5 py-0.5 text-[9px] font-black tracking-widest uppercase bg-amber-100 text-amber-700">
+                    Cambio pendiente
+                  </span>
+                {/if}
+              </td>
               <td class="px-5 py-3 text-[#6B7280]">{user.email}</td>
               <td class="px-5 py-3">
                 <span class="inline-block px-2.5 py-0.5 text-[10px] font-black tracking-widest uppercase {roleBadge(user.role)}">
@@ -188,6 +227,12 @@
                     Editar
                   </button>
                   <button
+                    onclick={() => openReset(user)}
+                    class="text-xs font-bold text-amber-600 hover:underline"
+                  >
+                    Resetear
+                  </button>
+                  <button
                     onclick={() => deleteUser(user)}
                     class="text-xs font-bold text-red-500 hover:underline"
                   >
@@ -207,18 +252,15 @@
   </div>
 </div>
 
-<!-- Slide-over panel -->
+<!-- Edit / Create slide-over -->
 {#if panelOpen}
-  <!-- Backdrop -->
   <div
     class="fixed inset-0 bg-black/40 z-40"
     onclick={closePanel}
     role="presentation"
   ></div>
 
-  <!-- Panel -->
   <div class="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
-    <!-- Header -->
     <div class="bg-[#081B6A] text-white px-6 py-5 flex items-center justify-between shrink-0">
       <h2 class="font-black text-base tracking-wide">
         {editing ? 'Editar usuario' : 'Nuevo usuario'}
@@ -228,7 +270,6 @@
       </button>
     </div>
 
-    <!-- Form -->
     <form onsubmit={submit} class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
       <!-- Name -->
       <div>
@@ -324,9 +365,26 @@
           <p class="text-[10px] text-[#9CA3AF] mt-1">Al iniciar sesión, el usuario verá los pronósticos del participante vinculado.</p>
         </div>
       {/if}
+
+      <!-- Force password change -->
+      <div class="flex items-start gap-3 pt-1">
+        <input
+          id="u-must-change"
+          type="checkbox"
+          bind:checked={form.must_change_password}
+          class="mt-0.5 h-4 w-4 accent-[#3554FF]"
+        />
+        <div>
+          <label for="u-must-change" class="text-sm font-semibold text-[#081B6A] cursor-pointer">
+            Forzar cambio de contraseña al iniciar sesión
+          </label>
+          <p class="text-[10px] text-[#9CA3AF] mt-0.5">
+            El usuario deberá establecer una nueva contraseña antes de continuar.
+          </p>
+        </div>
+      </div>
     </form>
 
-    <!-- Footer buttons -->
     <div class="px-6 py-4 border-t border-[#E0E0E0] flex gap-3 shrink-0">
       <button
         onclick={closePanel}
@@ -342,6 +400,70 @@
           hover:bg-[#2340cc] transition-colors disabled:opacity-50"
       >
         {form.processing ? 'Guardando...' : editing ? 'Actualizar' : 'Crear usuario'}
+      </button>
+    </div>
+  </div>
+{/if}
+
+<!-- Reset password slide-over -->
+{#if resetPanelOpen}
+  <div
+    class="fixed inset-0 bg-black/40 z-40"
+    onclick={closeReset}
+    role="presentation"
+  ></div>
+
+  <div class="fixed inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl z-50 flex flex-col">
+    <div class="bg-amber-600 text-white px-6 py-5 flex items-center justify-between shrink-0">
+      <div>
+        <h2 class="font-black text-base tracking-wide">Resetear contraseña</h2>
+        {#if resetTarget}
+          <p class="text-amber-100 text-xs mt-0.5">{resetTarget.name}</p>
+        {/if}
+      </div>
+      <button onclick={closeReset} class="text-white/60 hover:text-white text-xl leading-none">
+        ✕
+      </button>
+    </div>
+
+    <form onsubmit={submitReset} class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+      <div class="bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800">
+        Se establecerá una nueva contraseña temporal y el usuario deberá cambiarla al iniciar sesión.
+      </div>
+
+      <div>
+        <label for="r-password" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
+          Nueva contraseña temporal
+        </label>
+        <input
+          id="r-password"
+          type="password"
+          bind:value={resetForm.password}
+          placeholder="Mínimo 8 caracteres"
+          class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A]
+            focus:outline-none focus:border-amber-500 transition-colors"
+        />
+        {#if resetForm.errors.password}
+          <p class="text-xs text-red-600 mt-1">{resetForm.errors.password}</p>
+        {/if}
+      </div>
+    </form>
+
+    <div class="px-6 py-4 border-t border-[#E0E0E0] flex gap-3 shrink-0">
+      <button
+        onclick={closeReset}
+        class="flex-1 border border-[#E0E0E0] text-[#6B7280] font-bold text-sm py-2.5
+          hover:border-[#081B6A] hover:text-[#081B6A] transition-colors"
+      >
+        Cancelar
+      </button>
+      <button
+        onclick={(e) => submitReset(e as unknown as SubmitEvent)}
+        disabled={resetForm.processing}
+        class="flex-1 bg-amber-600 text-white font-black text-sm py-2.5
+          hover:bg-amber-700 transition-colors disabled:opacity-50"
+      >
+        {resetForm.processing ? 'Restableciendo...' : 'Restablecer contraseña'}
       </button>
     </div>
   </div>

@@ -101,3 +101,21 @@ export function medalFor(rank: number): string {
     if (rank === 3) return '🥉';
     return `${rank}°`;
 }
+
+export const STAGE_ORDER = [
+    'group', 'round_of_32', 'round_of_16', 'quarter', 'semi', 'third_place', 'final',
+] as const;
+
+export const STAGE_LABELS: Record<string, string> = {
+    group:       'Fase de grupos',
+    round_of_32: 'Dieciseisavos de final',
+    round_of_16: 'Octavos de final',
+    quarter:     'Cuartos de final',
+    semi:        'Semifinales',
+    third_place: 'Tercer puesto',
+    final:       'Final',
+};
+
+export function stageLabel(stage: string): string {
+    return STAGE_LABELS[stage] ?? stage;
+}

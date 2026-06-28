@@ -7,6 +7,7 @@
     stats: {
       participants: number;
       predictions: number;
+      participants_without_users: number;
       last_sync: string | null;
       last_import: string | null;
       import_result: { participants: number; predictions: number; skipped: number } | null;
@@ -32,6 +33,29 @@
     importForm.post('/admin/import', {
       forceFormData: true,
       onSuccess: () => { fileName = ''; importForm.reset(); if (fileInput) fileInput.value = ''; },
+    });
+  }
+
+  // ── Export ────────────────────────────────────────────────────
+  let exportStage = $state('group');
+
+  const stageOptions = [
+    { value: 'group',       label: 'Fase de grupos' },
+    { value: 'round_of_32', label: 'Dieciseisavos de final' },
+    { value: 'round_of_16', label: 'Octavos de final' },
+    { value: 'quarter',     label: 'Cuartos de final' },
+    { value: 'semi',        label: 'Semifinales' },
+    { value: 'third_place', label: 'Tercer puesto' },
+    { value: 'final',       label: 'Final' },
+  ];
+
+  // ── Bulk user creation ────────────────────────────────────────
+  const bulkForm = useForm({ base_password: '' });
+
+  function submitBulkCreate(e: SubmitEvent) {
+    e.preventDefault();
+    bulkForm.post('/admin/users/bulk-create', {
+      onSuccess: () => { bulkForm.reset(); },
     });
   }
 
@@ -180,6 +204,45 @@
       <!-- Right: Sync + Import -->
       <div class="lg:col-span-2 space-y-8">
 
+        <!-- ── Export module ── -->
+        <div>
+          <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-4">Exportar predicciones</p>
+          <div class="bg-white border border-[#E0E0E0] p-8">
+            <p class="text-sm text-[#6B7280] mb-5">
+              Descarga un Excel con todas las predicciones de una fase — una fila por participante,
+              una columna por partido, con colores según resultado.
+            </p>
+            <div class="space-y-4">
+              <div>
+                <label for="export-stage" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
+                  Fase
+                </label>
+                <select
+                  id="export-stage"
+                  bind:value={exportStage}
+                  class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] bg-white
+                    focus:outline-none focus:border-[#3554FF] transition-colors"
+                >
+                  {#each stageOptions as opt}
+                    <option value={opt.value}>{opt.label}</option>
+                  {/each}
+                </select>
+              </div>
+              <a
+                href="/admin/export/predictions?stage={exportStage}"
+                download
+                class="flex items-center justify-center gap-2 w-full bg-[#081B6A] text-white font-black text-sm py-3
+                  tracking-widest uppercase hover:bg-[#0a2490] transition-colors"
+              >
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Descargar Excel
+              </a>
+            </div>
+          </div>
+        </div>
+
         <!-- ── Sync module ── -->
         <div>
           <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-4">Sincronización y recálculo</p>
@@ -221,6 +284,55 @@
             </button>
           </div>
         </div>
+
+        <!-- ── Bulk user creation (super_admin only) ── -->
+        {#if isSuperAdmin}
+          <div>
+            <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-4">Crear cuentas de usuario</p>
+            <div class="bg-white border border-[#E0E0E0] p-8">
+              <p class="text-sm text-[#6B7280] mb-1">
+                Crea una cuenta para cada participante que tenga email registrado pero aún no tenga usuario.
+              </p>
+              {#if stats.participants_without_users > 0}
+                <p class="text-sm font-bold text-[#081B6A] mb-5">
+                  {stats.participants_without_users} participante{stats.participants_without_users !== 1 ? 's' : ''} sin cuenta
+                </p>
+              {:else}
+                <p class="text-sm text-emerald-600 font-semibold mb-5">Todos los participantes con email ya tienen cuenta.</p>
+              {/if}
+              <form onsubmit={submitBulkCreate} class="space-y-4">
+                <div>
+                  <label for="bulk-pwd" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
+                    Contraseña base
+                  </label>
+                  <input
+                    id="bulk-pwd"
+                    type="password"
+                    bind:value={bulkForm.base_password}
+                    placeholder="Mínimo 8 caracteres"
+                    class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A]
+                      focus:outline-none focus:border-[#3554FF] transition-colors
+                      {bulkForm.errors.base_password ? 'border-red-400' : ''}"
+                  />
+                  {#if bulkForm.errors.base_password}
+                    <p class="text-xs text-red-600 mt-1">{bulkForm.errors.base_password}</p>
+                  {/if}
+                  <p class="text-[10px] text-[#9CA3AF] mt-1">
+                    Los usuarios deberán cambiarla en el primer inicio de sesión.
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  disabled={bulkForm.processing || stats.participants_without_users === 0}
+                  class="w-full bg-[#081B6A] text-white font-black text-sm py-3 tracking-widest uppercase
+                    hover:bg-[#0a2490] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {bulkForm.processing ? 'Creando cuentas...' : 'Crear cuentas de usuario'}
+                </button>
+              </form>
+            </div>
+          </div>
+        {/if}
 
         <!-- ── Import (super_admin only) ── -->
         {#if isSuperAdmin}

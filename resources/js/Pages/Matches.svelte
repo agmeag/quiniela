@@ -3,7 +3,7 @@
   import MatchCard from '../Components/MatchCard.svelte';
   import type { Match } from '../lib/types';
   import { router } from '@inertiajs/svelte';
-  import { formatDate } from '../lib/utils';
+  import { formatDate, STAGE_ORDER, STAGE_LABELS, stageLabel } from '../lib/utils';
 
   let {
     matches,
@@ -37,14 +37,11 @@
     searchTimer = setTimeout(applyFilters, 400);
   }
 
-  const stageLabels: Record<string, string> = {
-    group: 'Grupos',
-    round_of_32: 'Ronda de 32',
-    round_of_16: 'Octavos',
-    quarter: 'Cuartos',
-    semi: 'Semifinales',
-    final: 'Final',
-  };
+  const STAGE_IDX = Object.fromEntries(STAGE_ORDER.map((s, i) => [s, i]));
+
+  const sortedStages = $derived(
+    [...stages].sort((a, b) => (STAGE_IDX[a] ?? 99) - (STAGE_IDX[b] ?? 99))
+  );
 
   // match_date is "YYYY-MM-DD HH:MM:SS" in El Salvador time from the backend
   function dateKey(svStr: string): string {
@@ -66,7 +63,13 @@
         (acc[key] ??= []).push(m);
         return acc;
       }, {})
-    ).sort(([a], [b]) => a.localeCompare(b))
+    ).sort(([a], [b]) => {
+      // Stage slugs sort by STAGE_ORDER; group names (e.g. "Grupo A") sort alphabetically within group stage
+      const ai = STAGE_IDX[a] ?? (STAGE_IDX['group'] + 0.5);
+      const bi = STAGE_IDX[b] ?? (STAGE_IDX['group'] + 0.5);
+      if (ai !== bi) return ai - bi;
+      return a.localeCompare(b);
+    })
   );
 
   const upcomingByDate = $derived(() => {
@@ -149,15 +152,15 @@
             >
               Todos
             </button>
-            {#each stages as stage}
+            {#each sortedStages as s}
               <button
-                onclick={() => { selectedStage = stage; applyFilters(); }}
+                onclick={() => { selectedStage = s; applyFilters(); }}
                 class="px-4 py-2 text-xs font-bold tracking-wide border transition-colors
-                  {selectedStage === stage
+                  {selectedStage === s
                     ? 'bg-[#081B6A] text-white border-[#081B6A]'
                     : 'bg-white text-[#081B6A] border-[#E0E0E0] hover:border-[#081B6A]'}"
               >
-                {stageLabels[stage] ?? stage}
+                {stageLabel(s)}
               </button>
             {/each}
           </div>
@@ -215,7 +218,7 @@
           <div class="mb-10">
             <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-4 flex items-center gap-3">
               <span class="h-px flex-1 bg-[#E0E0E0]"></span>
-              {groupName}
+              {STAGE_LABELS[groupName] ?? groupName}
               <span class="h-px flex-1 bg-[#E0E0E0]"></span>
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">

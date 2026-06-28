@@ -69,6 +69,11 @@ class WorldCupMatch extends Model
         return $this->home_score !== null && $this->away_score !== null;
     }
 
+    public function isPredictionOpen(): bool
+    {
+        return now()->lt($this->match_date->copy()->subHour());
+    }
+
     public function getScoreString(): string
     {
         if (! $this->hasScore()) {

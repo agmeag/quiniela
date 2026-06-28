@@ -1,5 +1,5 @@
 export type MatchStatus = 'notstarted' | 'live' | 'finished';
-export type Stage = 'group' | 'round_of_32' | 'round_of_16' | 'quarter' | 'semi' | 'final';
+export type Stage = 'group' | 'round_of_32' | 'round_of_16' | 'quarter' | 'semi' | 'third_place' | 'final';
 
 export interface Match {
     id: number;
@@ -18,6 +18,11 @@ export interface Match {
     venue: string | null;
     status: MatchStatus;
     minute: number | null;
+}
+
+export interface MatchWithPrediction extends Match {
+    closes_at: string;
+    prediction: { home_score: number; away_score: number } | null;
 }
 
 export interface Participant {

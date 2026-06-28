@@ -1,5 +1,6 @@
 <script lang="ts">
   import { useForm, usePage } from '@inertiajs/svelte';
+  import { STAGE_LABELS, STAGE_ORDER } from '../../lib/utils';
 
   type Match = {
     id: number;
@@ -10,19 +11,36 @@
     away_team_flag: string | null;
     match_date: string;
     venue: string | null;
-    group_name: string;
+    group_name: string | null;
     stage: string;
     status: string;
+    external_id: string | null;
   };
 
   let { matches }: { matches: Match[] } = $props();
 
   const page = usePage();
+  const isSuperAdmin = $derived((page.props.auth as any)?.user?.role === 'super_admin');
 
-  let filterGroup = $state('all');
-  let editingId   = $state<number | null>(null);
-  let editDate    = $state('');
-  let editTime    = $state('');
+  // ── Stage filter ─────────────────────────────────────────────
+  let filterStage = $state('all');
+
+  const STAGE_IDX = Object.fromEntries(STAGE_ORDER.map((s, i) => [s, i]));
+
+  const presentStages = $derived(
+    [...new Set(matches.map(m => m.stage))].sort(
+      (a, b) => (STAGE_IDX[a] ?? 99) - (STAGE_IDX[b] ?? 99)
+    )
+  );
+
+  const filtered = $derived(
+    filterStage === 'all' ? matches : matches.filter(m => m.stage === filterStage)
+  );
+
+  // ── Edit form ─────────────────────────────────────────────────
+  let editingId = $state<number | null>(null);
+  let editDate  = $state('');
+  let editTime  = $state('');
 
   const form = useForm({
     home_team:      '',
@@ -31,18 +49,13 @@
     away_team_flag: '',
     match_date:     '',
     venue:          '',
+    external_id:    '',
+    stage:          '',
+    group_name:     '',
   });
 
-  const groups = $derived([...new Set(matches.map(m => m.group_name))].sort());
-  const filtered = $derived(
-    filterGroup === 'all' ? matches : matches.filter(m => m.group_name === filterGroup)
-  );
-
   function startEdit(match: Match) {
-    if (editingId === match.id) {
-      editingId = null;
-      return;
-    }
+    if (editingId === match.id) { editingId = null; return; }
     const [d, t] = match.match_date.split(' ');
     editDate            = d;
     editTime            = t.slice(0, 5);
@@ -52,6 +65,9 @@
     form.away_team_flag = match.away_team_flag ?? '';
     form.match_date     = match.match_date;
     form.venue          = match.venue ?? '';
+    form.external_id    = match.external_id ?? '';
+    form.stage          = match.stage;
+    form.group_name     = match.group_name ?? '';
     form.clearErrors();
     editingId = match.id;
   }
@@ -63,6 +79,46 @@
     });
   }
 
+  // ── Create panel ──────────────────────────────────────────────
+  let createOpen = $state(false);
+  let createDate = $state('');
+  let createTime = $state('');
+
+  const createForm = useForm({
+    home_team:      '',
+    home_team_flag: '',
+    away_team:      '',
+    away_team_flag: '',
+    match_date:     '',
+    venue:          '',
+    stage:          'group' as string,
+    group_name:     '',
+    external_id:    '',
+  });
+
+  function openCreate() {
+    createForm.reset();
+    createForm.clearErrors();
+    createDate = '';
+    createTime = '';
+    createOpen = true;
+  }
+
+  function closeCreate() {
+    createOpen = false;
+    createForm.reset();
+    createForm.clearErrors();
+  }
+
+  function submitCreate(e: SubmitEvent) {
+    e.preventDefault();
+    createForm.match_date = createDate + ' ' + createTime + ':00';
+    createForm.post('/admin/matches', {
+      onSuccess: closeCreate,
+    });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
   function statusBadge(status: string) {
     if (status === 'finished') return 'bg-[#081B6A] text-white';
     if (status === 'live')     return 'bg-emerald-500 text-white';
@@ -82,6 +138,12 @@
     const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
     return `${d} ${months[m - 1]} · ${h}:${min}`;
   }
+
+  function phaseLabel(match: Match): string {
+    return match.group_name ?? (STAGE_LABELS[match.stage] ?? match.stage);
+  }
+
+  const stages = STAGE_ORDER.map(s => ({ value: s, label: STAGE_LABELS[s] ?? s }));
 </script>
 
 <svelte:head>
@@ -103,7 +165,7 @@
         <div class="flex items-center gap-4 text-xs font-semibold tracking-wide">
           <a href="/admin" class="text-white/60 hover:text-white transition-colors">Dashboard</a>
           <span class="text-[#3554FF]">Partidos</span>
-          {#if (page.props.auth as any)?.user?.role === 'super_admin'}
+          {#if isSuperAdmin}
             <a href="/admin/users" class="text-white/60 hover:text-white transition-colors">Usuarios</a>
           {/if}
         </div>
@@ -116,39 +178,47 @@
   </nav>
 
   <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <div class="mb-8">
-      <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1">Panel de administración</p>
-      <h1 class="text-3xl font-black text-[#081B6A]">Partidos</h1>
+    <div class="flex items-end justify-between mb-8">
+      <div>
+        <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1">Panel de administración</p>
+        <h1 class="text-3xl font-black text-[#081B6A]">Partidos</h1>
+      </div>
+      <button
+        onclick={openCreate}
+        class="bg-[#3554FF] text-white text-xs font-black tracking-widest uppercase px-5 py-3 hover:bg-[#2340cc] transition-colors"
+      >
+        + Nuevo partido
+      </button>
     </div>
 
     <!-- Flash -->
-    {#if page.props.flash?.success}
+    {#if (page.props.flash as any)?.success}
       <div class="mb-6 bg-emerald-50 border border-emerald-200 px-5 py-4 text-emerald-800 text-sm font-semibold">
-        {page.props.flash.success}
+        {(page.props.flash as any).success}
       </div>
     {/if}
-    {#if page.props.flash?.error}
+    {#if (page.props.flash as any)?.error}
       <div class="mb-6 bg-red-50 border border-red-200 px-5 py-4 text-red-800 text-sm font-semibold">
-        {page.props.flash.error}
+        {(page.props.flash as any).error}
       </div>
     {/if}
 
-    <!-- Group filter -->
+    <!-- Stage filter -->
     <div class="flex flex-wrap gap-2 mb-6">
       <button
-        onclick={() => filterGroup = 'all'}
+        onclick={() => filterStage = 'all'}
         class="px-3 py-1.5 text-[10px] font-black tracking-widest uppercase transition-colors
-          {filterGroup === 'all' ? 'bg-[#081B6A] text-white' : 'bg-white border border-[#E0E0E0] text-[#9CA3AF] hover:border-[#081B6A] hover:text-[#081B6A]'}"
+          {filterStage === 'all' ? 'bg-[#081B6A] text-white' : 'bg-white border border-[#E0E0E0] text-[#9CA3AF] hover:border-[#081B6A] hover:text-[#081B6A]'}"
       >
         Todos
       </button>
-      {#each groups as g}
+      {#each presentStages as s}
         <button
-          onclick={() => filterGroup = g}
+          onclick={() => filterStage = s}
           class="px-3 py-1.5 text-[10px] font-black tracking-widest uppercase transition-colors
-            {filterGroup === g ? 'bg-[#081B6A] text-white' : 'bg-white border border-[#E0E0E0] text-[#9CA3AF] hover:border-[#081B6A] hover:text-[#081B6A]'}"
+            {filterStage === s ? 'bg-[#081B6A] text-white' : 'bg-white border border-[#E0E0E0] text-[#9CA3AF] hover:border-[#081B6A] hover:text-[#081B6A]'}"
         >
-          {g}
+          {STAGE_LABELS[s] ?? s}
         </button>
       {/each}
     </div>
@@ -163,7 +233,7 @@
             <th class="px-4 py-3 text-center text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] hidden sm:table-cell">vs</th>
             <th class="px-4 py-3 text-left text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF]">Visitante</th>
             <th class="px-4 py-3 text-left text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] hidden md:table-cell">Fecha (SV)</th>
-            <th class="px-4 py-3 text-left text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] hidden lg:table-cell">Grupo</th>
+            <th class="px-4 py-3 text-left text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] hidden lg:table-cell">Fase/Grupo</th>
             <th class="px-4 py-3 text-left text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] hidden lg:table-cell">Estado</th>
             <th class="px-4 py-3 text-right text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF]"></th>
           </tr>
@@ -189,7 +259,7 @@
                 {formatMatchDate(match.match_date)}
               </td>
               <td class="px-4 py-3 hidden lg:table-cell">
-                <span class="text-xs text-[#6B7280]">{match.group_name}</span>
+                <span class="text-xs text-[#6B7280]">{phaseLabel(match)}</span>
               </td>
               <td class="px-4 py-3 hidden lg:table-cell">
                 <span class="inline-block px-2 py-0.5 text-[9px] font-black tracking-widest uppercase {statusBadge(match.status)}">
@@ -197,13 +267,17 @@
                 </span>
               </td>
               <td class="px-4 py-3 text-right">
-                <button
-                  onclick={() => startEdit(match)}
-                  class="text-xs font-bold transition-colors
-                    {editingId === match.id ? 'text-[#9CA3AF] hover:text-red-500' : 'text-[#3554FF] hover:text-[#2340cc]'}"
-                >
-                  {editingId === match.id ? 'Cancelar' : 'Editar'}
-                </button>
+                {#if isSuperAdmin || match.status !== 'finished'}
+                  <button
+                    onclick={() => startEdit(match)}
+                    class="text-xs font-bold transition-colors
+                      {editingId === match.id ? 'text-[#9CA3AF] hover:text-red-500' : 'text-[#3554FF] hover:text-[#2340cc]'}"
+                  >
+                    {editingId === match.id ? 'Cancelar' : 'Editar'}
+                  </button>
+                {:else}
+                  <span class="text-[10px] text-[#D1D5DB] italic">Solo superadmin</span>
+                {/if}
               </td>
             </tr>
 
@@ -217,111 +291,71 @@
                     </p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <!-- Date -->
                       <div>
-                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
-                          Fecha (hora SV)
-                        </label>
-                        <input
-                          type="date"
-                          bind:value={editDate}
-                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A]
-                            focus:outline-none focus:border-[#3554FF] transition-colors"
-                        />
+                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Fecha (hora SV)</label>
+                        <input type="date" bind:value={editDate}
+                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]" />
                       </div>
-
-                      <!-- Time -->
                       <div>
-                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
-                          Hora (hora SV)
-                        </label>
-                        <input
-                          type="time"
-                          bind:value={editTime}
-                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A]
-                            focus:outline-none focus:border-[#3554FF] transition-colors"
-                        />
+                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Hora (hora SV)</label>
+                        <input type="time" bind:value={editTime}
+                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]" />
                       </div>
-
-                      <!-- Venue -->
                       <div>
-                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
-                          Sede
-                        </label>
-                        <input
-                          type="text"
-                          bind:value={form.venue}
-                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A]
-                            focus:outline-none focus:border-[#3554FF] transition-colors"
-                        />
+                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Sede</label>
+                        <input type="text" bind:value={form.venue}
+                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]" />
                       </div>
-
-                      <!-- Home team -->
                       <div>
-                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
-                          Equipo local
-                        </label>
-                        <input
-                          type="text"
-                          bind:value={form.home_team}
-                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A]
-                            focus:outline-none focus:border-[#3554FF] transition-colors
-                            {form.errors.home_team ? 'border-red-400' : ''}"
-                        />
-                        {#if form.errors.home_team}
-                          <p class="text-xs text-red-600 mt-1">{form.errors.home_team}</p>
-                        {/if}
+                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Equipo local</label>
+                        <input type="text" bind:value={form.home_team}
+                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF] {form.errors.home_team ? 'border-red-400' : ''}" />
+                        {#if form.errors.home_team}<p class="text-xs text-red-600 mt-1">{form.errors.home_team}</p>{/if}
                       </div>
-
-                      <!-- Home flag -->
                       <div>
-                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
-                          Bandera local (emoji)
-                        </label>
-                        <input
-                          type="text"
-                          bind:value={form.home_team_flag}
-                          maxlength="10"
-                          placeholder="🇲🇽"
-                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A]
-                            focus:outline-none focus:border-[#3554FF] transition-colors"
-                        />
+                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Bandera local (emoji)</label>
+                        <input type="text" bind:value={form.home_team_flag} maxlength="10" placeholder="🇲🇽"
+                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]" />
                       </div>
-
-                      <!-- Away team -->
                       <div>
-                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
-                          Equipo visitante
-                        </label>
-                        <input
-                          type="text"
-                          bind:value={form.away_team}
-                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A]
-                            focus:outline-none focus:border-[#3554FF] transition-colors
-                            {form.errors.away_team ? 'border-red-400' : ''}"
-                        />
-                        {#if form.errors.away_team}
-                          <p class="text-xs text-red-600 mt-1">{form.errors.away_team}</p>
-                        {/if}
+                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Equipo visitante</label>
+                        <input type="text" bind:value={form.away_team}
+                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF] {form.errors.away_team ? 'border-red-400' : ''}" />
+                        {#if form.errors.away_team}<p class="text-xs text-red-600 mt-1">{form.errors.away_team}</p>{/if}
                       </div>
-
-                      <!-- Away flag -->
                       <div>
-                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
-                          Bandera visitante (emoji)
-                        </label>
-                        <input
-                          type="text"
-                          bind:value={form.away_team_flag}
-                          maxlength="10"
-                          placeholder="🇧🇷"
-                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A]
-                            focus:outline-none focus:border-[#3554FF] transition-colors"
-                        />
+                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Bandera visitante (emoji)</label>
+                        <input type="text" bind:value={form.away_team_flag} maxlength="10" placeholder="🇧🇷"
+                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]" />
                       </div>
+                      <div>
+                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">ID externo (API)</label>
+                        <input type="text" bind:value={form.external_id} placeholder="ej. 42"
+                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]
+                            {form.errors.external_id ? 'border-red-400' : ''}" />
+                        {#if form.errors.external_id}<p class="text-xs text-red-600 mt-1">{form.errors.external_id}</p>{/if}
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Fase</label>
+                        <select bind:value={form.stage}
+                          class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]">
+                          {#each stages as s}
+                            <option value={s.value}>{s.label}</option>
+                          {/each}
+                        </select>
+                        {#if form.errors.stage}<p class="text-xs text-red-600 mt-1">{form.errors.stage}</p>{/if}
+                      </div>
+                      {#if form.stage === 'group'}
+                        <div>
+                          <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Grupo</label>
+                          <input type="text" bind:value={form.group_name} placeholder="Grupo A"
+                            class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]
+                              {form.errors.group_name ? 'border-red-400' : ''}" />
+                          {#if form.errors.group_name}<p class="text-xs text-red-600 mt-1">{form.errors.group_name}</p>{/if}
+                        </div>
+                      {/if}
                     </div>
 
-                    <!-- Errors summary -->
                     {#if form.errors.match_date}
                       <p class="text-xs text-red-600 mt-3">{form.errors.match_date}</p>
                     {/if}
@@ -330,15 +364,13 @@
                       <button
                         onclick={() => saveMatch(match)}
                         disabled={form.processing}
-                        class="bg-[#3554FF] text-white font-black text-xs tracking-widest uppercase px-6 py-2.5
-                          hover:bg-[#2340cc] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="bg-[#3554FF] text-white font-black text-xs tracking-widest uppercase px-6 py-2.5 hover:bg-[#2340cc] transition-colors disabled:opacity-50"
                       >
                         {form.processing ? 'Guardando...' : 'Guardar cambios'}
                       </button>
                       <button
                         onclick={() => { editingId = null; }}
-                        class="border border-[#E0E0E0] bg-white text-[#6B7280] font-bold text-xs px-5 py-2.5
-                          hover:border-[#081B6A] hover:text-[#081B6A] transition-colors"
+                        class="border border-[#E0E0E0] bg-white text-[#6B7280] font-bold text-xs px-5 py-2.5 hover:border-[#081B6A] hover:text-[#081B6A] transition-colors"
                       >
                         Cancelar
                       </button>
@@ -357,3 +389,119 @@
     </div>
   </div>
 </div>
+
+<!-- Create slide-over panel -->
+{#if createOpen}
+  <div class="fixed inset-0 bg-black/40 z-40" onclick={closeCreate} role="presentation"></div>
+
+  <div class="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
+    <div class="bg-[#081B6A] text-white px-6 py-5 flex items-center justify-between shrink-0">
+      <h2 class="font-black text-base tracking-wide">Nuevo partido</h2>
+      <button onclick={closeCreate} class="text-white/60 hover:text-white text-xl leading-none">✕</button>
+    </div>
+
+    <form onsubmit={submitCreate} class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+      <!-- Stage -->
+      <div>
+        <label for="c-stage" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Fase</label>
+        <select id="c-stage" bind:value={createForm.stage}
+          class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] bg-white focus:outline-none focus:border-[#3554FF]">
+          {#each stages as s}
+            <option value={s.value}>{s.label}</option>
+          {/each}
+        </select>
+        {#if createForm.errors.stage}<p class="text-xs text-red-600 mt-1">{createForm.errors.stage}</p>{/if}
+      </div>
+
+      <!-- Group name (only for group stage) -->
+      {#if createForm.stage === 'group'}
+        <div>
+          <label for="c-group" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Nombre del grupo</label>
+          <input id="c-group" type="text" bind:value={createForm.group_name} placeholder="Grupo A"
+            class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF] {createForm.errors.group_name ? 'border-red-400' : ''}" />
+          {#if createForm.errors.group_name}<p class="text-xs text-red-600 mt-1">{createForm.errors.group_name}</p>{/if}
+        </div>
+      {/if}
+
+      <!-- Date -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="c-date" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Fecha (SV)</label>
+          <input id="c-date" type="date" bind:value={createDate}
+            class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]" />
+        </div>
+        <div>
+          <label for="c-time" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Hora (SV)</label>
+          <input id="c-time" type="time" bind:value={createTime}
+            class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]" />
+        </div>
+      </div>
+      {#if createForm.errors.match_date}<p class="text-xs text-red-600 -mt-3">{createForm.errors.match_date}</p>{/if}
+
+      <!-- Home team -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="c-home" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Equipo local</label>
+          <input id="c-home" type="text" bind:value={createForm.home_team}
+            class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF] {createForm.errors.home_team ? 'border-red-400' : ''}" />
+          {#if createForm.errors.home_team}<p class="text-xs text-red-600 mt-1">{createForm.errors.home_team}</p>{/if}
+        </div>
+        <div>
+          <label for="c-home-flag" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Bandera (emoji)</label>
+          <input id="c-home-flag" type="text" bind:value={createForm.home_team_flag} maxlength="10" placeholder="🇲🇽"
+            class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]" />
+        </div>
+      </div>
+
+      <!-- Away team -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="c-away" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Equipo visitante</label>
+          <input id="c-away" type="text" bind:value={createForm.away_team}
+            class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF] {createForm.errors.away_team ? 'border-red-400' : ''}" />
+          {#if createForm.errors.away_team}<p class="text-xs text-red-600 mt-1">{createForm.errors.away_team}</p>{/if}
+        </div>
+        <div>
+          <label for="c-away-flag" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Bandera (emoji)</label>
+          <input id="c-away-flag" type="text" bind:value={createForm.away_team_flag} maxlength="10" placeholder="🇧🇷"
+            class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]" />
+        </div>
+      </div>
+
+      <!-- Venue -->
+      <div>
+        <label for="c-venue" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">Sede (opcional)</label>
+        <input id="c-venue" type="text" bind:value={createForm.venue}
+          class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]" />
+      </div>
+
+      <!-- External ID -->
+      <div>
+        <label for="c-ext-id" class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">ID externo (API)</label>
+        <input id="c-ext-id" type="text" bind:value={createForm.external_id} placeholder="ej. 42"
+          class="w-full border border-[#E0E0E0] px-4 py-2.5 text-sm text-[#081B6A] focus:outline-none focus:border-[#3554FF]
+            {createForm.errors.external_id ? 'border-red-400' : ''}" />
+        {#if createForm.errors.external_id}
+          <p class="text-xs text-red-600 mt-1">{createForm.errors.external_id}</p>
+        {/if}
+        <p class="text-[10px] text-[#9CA3AF] mt-1">Requerido para sincronización automática de resultados.</p>
+      </div>
+    </form>
+
+    <div class="px-6 py-4 border-t border-[#E0E0E0] flex gap-3 shrink-0">
+      <button
+        onclick={closeCreate}
+        class="flex-1 border border-[#E0E0E0] text-[#6B7280] font-bold text-sm py-2.5 hover:border-[#081B6A] hover:text-[#081B6A] transition-colors"
+      >
+        Cancelar
+      </button>
+      <button
+        onclick={(e) => submitCreate(e as unknown as SubmitEvent)}
+        disabled={createForm.processing}
+        class="flex-1 bg-[#3554FF] text-white font-black text-sm py-2.5 hover:bg-[#2340cc] transition-colors disabled:opacity-50"
+      >
+        {createForm.processing ? 'Creando...' : 'Crear partido'}
+      </button>
+    </div>
+  </div>
+{/if}
