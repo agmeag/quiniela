@@ -15,6 +15,7 @@
     stage: string;
     status: string;
     external_id: string | null;
+    closes_at: string | null;
   };
 
   let { matches }: { matches: Match[] } = $props();
@@ -143,6 +144,11 @@
     return match.group_name ?? (STAGE_LABELS[match.stage] ?? match.stage);
   }
 
+  function canEdit(match: Match): boolean {
+    if (isSuperAdmin) return true;
+    return match.closes_at != null && new Date(match.closes_at) > new Date();
+  }
+
   const stages = STAGE_ORDER.map(s => ({ value: s, label: STAGE_LABELS[s] ?? s }));
 </script>
 
@@ -267,7 +273,7 @@
                 </span>
               </td>
               <td class="px-4 py-3 text-right">
-                {#if isSuperAdmin || match.status !== 'finished'}
+                {#if canEdit(match)}
                   <button
                     onclick={() => startEdit(match)}
                     class="text-xs font-bold transition-colors

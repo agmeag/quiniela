@@ -30,6 +30,7 @@ class MatchesController extends Controller
                 'stage'          => $m->stage,
                 'status'         => $m->status,
                 'external_id'    => $m->external_id,
+                'closes_at'      => $m->match_date?->copy()->subHour()->toIso8601String(),
             ])->values()->all();
 
         return Inertia::render('Admin/Matches', ['matches' => $matches]);
@@ -60,9 +61,10 @@ class MatchesController extends Controller
 
     public function update(Request $request, WorldCupMatch $match): RedirectResponse
     {
-        // Only super_admin can edit finished matches
-        if ($match->status === 'finished' && ! $request->user()->isSuperAdmin()) {
-            abort(403, 'Solo el super admin puede editar partidos finalizados.');
+        // Only super_admin can edit once the prediction deadline has passed (1 hour before match)
+        $deadline = $match->match_date->copy()->subHour();
+        if (now()->gte($deadline) && ! $request->user()->isSuperAdmin()) {
+            abort(403, 'Solo el super admin puede editar este partido una vez cerrado el período de predicción.');
         }
 
         $data = $request->validate([
