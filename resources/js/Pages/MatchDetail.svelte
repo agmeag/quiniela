@@ -12,6 +12,9 @@
     pred_home: number;
     pred_away: number;
     is_live_matching: boolean;
+    is_exact: boolean;
+    correct_winner: boolean;
+    points: number;
   };
 
   type Goal = {
@@ -289,13 +292,14 @@
                     <th class="px-4 py-3 text-center text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF]">Pronóstico</th>
                     {#if isFinished}
                       <th class="px-4 py-3 text-center text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] w-8"></th>
+                      <th class="px-4 py-3 text-right text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] w-16">Pts</th>
                     {/if}
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-[#F0F0F0]">
                   {#each all_predictions as row}
-                    {@const exact = isFinished && row.pred_home === match.home_score && row.pred_away === match.away_score}
-                    <tr class="{row.is_live_matching ? 'bg-red-50' : exact ? 'bg-emerald-50' : 'hover:bg-[#FAFAFA]'} transition-colors">
+                    {@const rowBg = row.is_live_matching ? 'bg-red-50' : row.is_exact ? 'bg-emerald-50' : row.correct_winner ? 'bg-blue-50' : 'hover:bg-[#FAFAFA]'}
+                    <tr class="{rowBg} transition-colors">
                       <td class="px-4 py-2.5 text-center">
                         {#if row.leaderboard_rank}
                           <span class="inline-flex items-center justify-center w-6 h-6 text-[10px] font-black rounded-full
@@ -313,16 +317,21 @@
                         </a>
                       </td>
                       <td class="px-4 py-2.5 text-center font-mono font-black
-                        {row.is_live_matching ? 'text-red-600' : exact ? 'text-emerald-700' : 'text-[#081B6A]'}">
+                        {row.is_live_matching ? 'text-red-600' : row.is_exact ? 'text-emerald-700' : row.correct_winner ? 'text-blue-700' : 'text-[#081B6A]'}">
                         {row.pred_home}–{row.pred_away}
                       </td>
                       {#if isFinished}
                         <td class="px-4 py-2.5 text-center text-sm">
-                          {#if exact}
+                          {#if row.is_exact}
                             <span class="text-emerald-600 font-black">✓</span>
+                          {:else if row.correct_winner}
+                            <span class="text-blue-500 font-black">✓</span>
                           {:else}
                             <span class="text-[#D1D5DB]">✗</span>
                           {/if}
+                        </td>
+                        <td class="px-4 py-2.5 text-right font-black text-sm {row.points > 0 ? 'text-[#3554FF]' : 'text-[#D1D5DB]'}">
+                          {row.points > 0 ? `+${row.points}` : '—'}
                         </td>
                       {/if}
                     </tr>

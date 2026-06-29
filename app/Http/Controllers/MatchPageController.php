@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\LeaderboardEntry;
+use App\Models\MatchRanking;
 use App\Models\Prediction;
 use App\Models\WorldCupMatch;
 use App\Services\RankingService;
@@ -95,6 +96,10 @@ class MatchPageController extends Controller
             // All predictions for this match, sorted by leaderboard rank then name
             $ranks = LeaderboardEntry::pluck('rank', 'participant_id');
 
+            $matchRankings = MatchRanking::where('match_id', $match->id)
+                ->get()
+                ->keyBy('participant_id');
+
             $allPredictions = Prediction::with('participant')
                 ->where('match_id', $match->id)
                 ->get()
@@ -111,6 +116,9 @@ class MatchPageController extends Controller
                     'is_live_matching'  => $isLive && $match->home_score !== null
                         && $p->home_score === ($match->home_score_90 ?? $match->home_score)
                         && $p->away_score === ($match->away_score_90 ?? $match->away_score),
+                    'is_exact'          => (bool) ($matchRankings->get($p->participant_id)?->is_exact ?? false),
+                    'correct_winner'    => (bool) ($matchRankings->get($p->participant_id)?->correct_winner ?? false),
+                    'points'            => (int) ($matchRankings->get($p->participant_id)?->points ?? 0),
                 ])->values()->all();
 
             // Participants whose prediction matches the current live score right now

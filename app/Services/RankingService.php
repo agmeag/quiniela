@@ -20,6 +20,10 @@ class RankingService
             return;
         }
 
+        if (in_array($match->stage, ['round_of_32', 'round_of_16'])) {
+            $this->ensureScore90Correct($match);
+        }
+
         $service = match ($match->stage) {
             'group'       => new Ranking\GroupRankingService(),
             'round_of_32' => new Ranking\Round32RankingService(),
@@ -32,6 +36,57 @@ class RankingService
         };
 
         $service->recalculate($match);
+    }
+
+    /**
+     * Re-evaluate is_extra_time on stored match_goals and correct home_score_90
+     * / away_score_90 before scoring.  Goals written as "90+5'" are stoppage
+     * time in regulation (base=90); only goals where the base minute itself
+     * exceeds 90 with no suffix (e.g. "98'", "105'") are real extra time.
+     */
+    private function ensureScore90Correct(WorldCupMatch $match): void
+    {
+        $goals = $match->goals()->get();
+
+        if ($goals->isEmpty()) {
+            return;
+        }
+
+        $hasRealAET = false;
+
+        foreach ($goals as $goal) {
+            $correct = $this->isRealExtraTime($goal->minute);
+
+            if ($goal->is_extra_time !== $correct) {
+                $goal->update(['is_extra_time' => $correct]);
+            }
+
+            if ($correct) {
+                $hasRealAET = true;
+            }
+        }
+
+        if (! $hasRealAET && $match->home_score_90 !== null) {
+            $match->update(['home_score_90' => null, 'away_score_90' => null]);
+        } elseif ($hasRealAET) {
+            $goals = $match->goals()->get();
+            $match->update([
+                'home_score_90' => $goals->where('is_extra_time', false)->where('team', 'home')->count(),
+                'away_score_90' => $goals->where('is_extra_time', false)->where('team', 'away')->count(),
+            ]);
+        }
+    }
+
+    private function isRealExtraTime(string $minuteStr): bool
+    {
+        if (! preg_match('/(\d+)(?:[\'"]?\+(\d+))?\s*\'/', $minuteStr, $m)) {
+            return false;
+        }
+
+        $base  = (int) $m[1];
+        $added = isset($m[2]) && $m[2] !== '' ? (int) $m[2] : 0;
+
+        return $base > 90 && $added === 0;
     }
 
     public function recalculateLeaderboard(): void
