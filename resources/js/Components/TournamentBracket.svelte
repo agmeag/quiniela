@@ -194,9 +194,9 @@
   .bracket {
     display: flex;
     align-items: stretch;
-    height: 660px;
-    min-width: 1100px;
-    max-width: 1400px;
+    height: 700px;
+    min-width: 1260px;
+    max-width: 1560px;
     margin: 0 auto;
   }
 
@@ -363,7 +363,7 @@
   }
 
   .round-label {
-    font-size: 8px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -378,8 +378,8 @@
 
   /* ── Match card ── */
   .match-card {
-    width: 116px;
-    min-width: 116px;
+    width: 140px;
+    min-width: 140px;
     border: 1px solid #303030;
     background: #1A1A1A;
     border-radius: 5px;

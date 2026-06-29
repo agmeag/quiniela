@@ -128,7 +128,7 @@
                 90 min: {match.home_score_90}–{match.away_score_90} · Prórroga
               </p>
             {:else if match.home_score_ht !== null}
-              <p class="text-white/40 text-xs mt-1">ET: {match.home_score_ht}–{match.away_score_ht}</p>
+              <p class="text-white/40 text-xs mt-1">MT: {match.home_score_ht}–{match.away_score_ht}</p>
             {/if}
           {:else}
             <div class="text-2xl font-black text-white/30">VS</div>

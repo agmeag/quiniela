@@ -18,14 +18,12 @@ class Round32RankingService
         $refHome = $hasAET ? $match->home_score_90 : $match->home_score;
         $refAway = $hasAET ? $match->away_score_90 : $match->away_score;
 
-        // 5-pt reference: final result (after AET, not counting penalty shootout goals)
-        $finalHome = $match->home_score;
-        $finalAway = $match->away_score;
-        $refWinner = $finalHome > $finalAway ? 'home' : ($finalAway > $finalHome ? 'away' : 'draw');
+        // 5-pt reference: correct 90-min outcome (winner or draw)
+        $refWinner = $refHome > $refAway ? 'home' : ($refAway > $refHome ? 'away' : 'draw');
 
         $predictions = Prediction::where('match_id', $match->id)->get();
 
-        $scored = $predictions->map(function (Prediction $prediction) use ($match, $hasAET, $refHome, $refAway, $finalHome, $finalAway, $refWinner) {
+        $scored = $predictions->map(function (Prediction $prediction) use ($match, $refHome, $refAway, $refWinner) {
             // score_diff uses 90-min reference for tiebreaking
             $scoreDiff = abs($prediction->home_score - $refHome)
                 + abs($prediction->away_score - $refAway);
@@ -33,12 +31,9 @@ class Round32RankingService
             $isExact = $prediction->home_score === $refHome
                 && $prediction->away_score === $refAway;
 
-            // 5-pt conditions: correct final winner OR exact final score (AET goals count)
-            $isExactFinal  = $hasAET
-                && $prediction->home_score === $finalHome
-                && $prediction->away_score === $finalAway;
+            // 5-pt condition: correct 90-min outcome only
             $correctWinner = $prediction->getWinner() === $refWinner;
-            $earnsFive     = $correctWinner || $isExactFinal;
+            $earnsFive     = $correctWinner;
 
             $points = $this->calculatePoints($isExact, $earnsFive, $match->stage);
 

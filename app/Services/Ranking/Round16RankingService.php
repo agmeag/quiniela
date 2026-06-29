@@ -18,36 +18,21 @@ class Round16RankingService
         $refHome = $hasAET ? $match->home_score_90 : $match->home_score;
         $refAway = $hasAET ? $match->away_score_90 : $match->away_score;
 
-        // 5-pt reference A: final result (after AET, not counting penalty shootout goals)
-        $finalHome = $match->home_score;
-        $finalAway = $match->away_score;
-        $refWinner = $finalHome > $finalAway ? 'home' : ($finalAway > $finalHome ? 'away' : 'draw');
-
-        // 5-pt reference B: 90-min 1X2 result (winner or draw at 90 min)
-        // Only meaningful when hasAET=true; when no AET it equals $refWinner
-        $ref90Winner = $hasAET
-            ? ($match->home_score_90 > $match->away_score_90 ? 'home' : ($match->away_score_90 > $match->home_score_90 ? 'away' : 'draw'))
-            : $refWinner;
+        // 5-pt reference: correct 90-min outcome (winner or draw)
+        $refWinner = $refHome > $refAway ? 'home' : ($refAway > $refHome ? 'away' : 'draw');
 
         $predictions = Prediction::where('match_id', $match->id)->get();
 
-        $scored = $predictions->map(function (Prediction $prediction) use ($hasAET, $refHome, $refAway, $finalHome, $finalAway, $refWinner, $ref90Winner) {
+        $scored = $predictions->map(function (Prediction $prediction) use ($refHome, $refAway, $refWinner) {
             $scoreDiff = abs($prediction->home_score - $refHome)
                 + abs($prediction->away_score - $refAway);
 
             $isExact = $prediction->home_score === $refHome
                 && $prediction->away_score === $refAway;
 
-            // 5-pt condition 1: correct final winner (after AET) or exact AET score
-            $isExactFinal  = $hasAET
-                && $prediction->home_score === $finalHome
-                && $prediction->away_score === $finalAway;
-            $correctFinalWinner = $prediction->getWinner() === $refWinner;
-
-            // 5-pt condition 2: correct 90-min result (winner or draw at end of 90 min)
-            $correct90Result = $prediction->getWinner() === $ref90Winner;
-
-            $earnsFive = $correctFinalWinner || $isExactFinal || $correct90Result;
+            // 5-pt condition: correct 90-min outcome only
+            $correctWinner = $prediction->getWinner() === $refWinner;
+            $earnsFive     = $correctWinner;
 
             $points = $this->calculatePoints($isExact, $earnsFive, 'round_of_16');
 

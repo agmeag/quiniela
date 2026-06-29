@@ -12,7 +12,7 @@ return [
     'tiers' => [
         'group' => [
             'exact_score'    => 5,
-            'correct_winner' => 3,
+            'correct_winner' => 5,
         ],
         'round_of_32' => [
             'exact_score'    => 7,

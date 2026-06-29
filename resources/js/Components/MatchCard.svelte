@@ -44,7 +44,7 @@
             {match.home_score}<span class="text-[#3554FF] mx-1">–</span>{match.away_score}
           </div>
           {#if match.home_score_ht !== null}
-            <div class="text-[10px] text-[#9CA3AF] mt-1">({match.home_score_ht}–{match.away_score_ht} ET)</div>
+            <div class="text-[10px] text-[#9CA3AF] mt-1">({match.home_score_ht}–{match.away_score_ht} MT)</div>
           {/if}
         {:else}
           <div class="text-sm font-bold text-[#9CA3AF]">{formatDate(match.match_date)}</div>
