@@ -57,11 +57,16 @@ class HomeController extends Controller
                 'minute' => $m->minute,
             ];
 
+            $bracketMatches = WorldCupMatch::whereIn('stage', [
+                'round_of_32', 'round_of_16', 'quarter', 'semi', 'third_place', 'final',
+            ])->orderBy('correlativo')->get()->map($serializeMatch)->values()->all();
+
             return [
                 'top_participants' => $topParticipants,
                 'featured_matches' => $featuredSource->map($serializeMatch)->values()->all(),
                 'has_live' => $liveMatches->isNotEmpty(),
                 'participants_count' => $participantsCount,
+                'bracket_matches' => $bracketMatches,
             ];
         });
 

@@ -21,16 +21,12 @@ class PredictionController extends Controller
             return Inertia::render('Predictions', [
                 'participant' => null,
                 'matches'     => [],
-                'stage'       => $request->query('stage', 'group'),
             ]);
         }
 
         $participant = $user->participant;
-        $stage       = $request->query('stage', 'group');
 
-        $matches = WorldCupMatch::where('stage', $stage)
-            ->orderBy('match_date')
-            ->get();
+        $matches = WorldCupMatch::orderBy('match_date')->get();
 
         $existingPredictions = Prediction::where('participant_id', $participant->id)
             ->whereIn('match_id', $matches->pluck('id'))
@@ -47,12 +43,16 @@ class PredictionController extends Controller
                 'home_team_flag' => $m->home_team_flag,
                 'away_team'      => $m->away_team,
                 'away_team_flag' => $m->away_team_flag,
+                'home_score'     => $m->home_score,
+                'away_score'     => $m->away_score,
+                'home_score_ht'  => $m->home_score_ht,
+                'away_score_ht'  => $m->away_score_ht,
+                'minute'         => $m->minute,
                 'match_date'     => $m->match_date?->format('Y-m-d H:i:s'),
                 'group_name'     => $m->group_name,
                 'stage'          => $m->stage,
                 'status'         => $m->status,
                 'venue'          => $m->venue,
-                // ISO with -06:00 offset so JS new Date() is TZ-safe
                 'closes_at'      => $m->match_date?->copy()->subHour()->toIso8601String(),
                 'prediction'     => $pred ? [
                     'home_score' => $pred->home_score,
@@ -64,7 +64,6 @@ class PredictionController extends Controller
         return Inertia::render('Predictions', [
             'participant' => ['name' => $participant->name],
             'matches'     => $matchData,
-            'stage'       => $stage,
         ]);
     }
 

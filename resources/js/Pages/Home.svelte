@@ -2,6 +2,7 @@
   import Nav from '../Components/Nav.svelte';
   import MatchCard from '../Components/MatchCard.svelte';
   import LeaderboardRow from '../Components/LeaderboardRow.svelte';
+  import TournamentBracket from '../Components/TournamentBracket.svelte';
   import type { Match, Participant } from '../lib/types';
 
   let {
@@ -9,11 +10,13 @@
     featured_matches,
     has_live,
     participants_count,
+    bracket_matches,
   }: {
     top_participants: Participant[];
     featured_matches: Match[];
     has_live: boolean;
     participants_count: number;
+    bracket_matches: Match[];
   } = $props();
 
   const podiumOrder = [2, 1, 3];
@@ -46,6 +49,9 @@
       </div>
     </div>
   </section>
+
+  <!-- Tournament Bracket -->
+  <TournamentBracket {bracket_matches} />
 
   <!-- Top 3 Podium -->
   {#if top_participants.length >= 3}
