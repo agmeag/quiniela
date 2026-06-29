@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\WorldCupMatch;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -30,6 +31,10 @@ class MatchesController extends Controller
                 'stage'          => $m->stage,
                 'status'         => $m->status,
                 'external_id'    => $m->external_id,
+                'home_score'     => $m->home_score,
+                'away_score'     => $m->away_score,
+                'home_score_90'  => $m->home_score_90,
+                'away_score_90'  => $m->away_score_90,
                 'closes_at'      => $m->match_date?->copy()->subHour()->toIso8601String(),
             ])->values()->all();
 
@@ -53,8 +58,10 @@ class MatchesController extends Controller
         $data['correlativo'] = (WorldCupMatch::max('correlativo') ?? 0) + 1;
         $data['status']      = 'notstarted';
 
-        WorldCupMatch::create($data);
+        $match = WorldCupMatch::create($data);
         Cache::tags(['matches'])->flush();
+
+        AuditService::log('match.created', "Partido creado: {$match->home_team} vs {$match->away_team} · {$match->match_date->format('d/m/Y H:i')} · {$match->stage}", 'match', $match->id);
 
         return back()->with('success', 'Partido creado correctamente.');
     }
@@ -77,10 +84,14 @@ class MatchesController extends Controller
             'stage'          => ['required', Rule::in(['group', 'round_of_32', 'round_of_16', 'quarter', 'semi', 'third_place', 'final'])],
             'group_name'     => ['nullable', 'required_if:stage,group', 'string', 'max:100'],
             'external_id'    => ['nullable', 'string', 'max:50', Rule::unique('matches', 'external_id')->ignore($match->id)],
+            'home_score_90'  => ['nullable', 'integer', 'min:0', 'max:99'],
+            'away_score_90'  => ['nullable', 'integer', 'min:0', 'max:99'],
         ]);
 
         $match->update($data);
         Cache::tags(['matches'])->flush();
+
+        AuditService::log('match.updated', "Partido actualizado: #{$match->correlativo} {$match->home_team} vs {$match->away_team}", 'match', $match->id);
 
         return back()->with('success', "Partido #{$match->correlativo} actualizado.");
     }

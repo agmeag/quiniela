@@ -7,6 +7,7 @@ use App\Models\MatchRanking;
 use App\Models\Participant;
 use App\Models\Prediction;
 use App\Models\WorldCupMatch;
+use App\Services\Ranking;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -19,60 +20,18 @@ class RankingService
             return;
         }
 
-        $predictions = Prediction::where('match_id', $match->id)->get();
+        $service = match ($match->stage) {
+            'group'       => new Ranking\GroupRankingService(),
+            'round_of_32' => new Ranking\Round32RankingService(),
+            'round_of_16' => new Ranking\Round16RankingService(),
+            'quarter'     => new Ranking\QuarterRankingService(),
+            'semi'        => new Ranking\SemiRankingService(),
+            'third_place' => new Ranking\ThirdPlaceRankingService(),
+            'final'       => new Ranking\FinalRankingService(),
+            default       => new Ranking\GroupRankingService(),
+        };
 
-        $scored = $predictions->map(function (Prediction $prediction) use ($match) {
-            $scoreDiff = abs($prediction->home_score - $match->home_score)
-                + abs($prediction->away_score - $match->away_score);
-
-            $isExact = $prediction->home_score === $match->home_score
-                && $prediction->away_score === $match->away_score;
-
-            $correctWinner = $prediction->getWinner() === $match->getWinner();
-
-            $points = $this->calculatePoints($isExact, $correctWinner, $match->stage);
-
-            return [
-                'prediction' => $prediction,
-                'score_diff' => $scoreDiff,
-                'is_exact' => $isExact,
-                'correct_winner' => $correctWinner,
-                'points' => $points,
-            ];
-        })->sortBy([
-            ['score_diff', 'asc'],
-            ['is_exact', 'desc'],
-        ])->values();
-
-        $now = Carbon::now();
-        $rank = 1;
-
-        DB::transaction(function () use ($scored, $match, $now, &$rank) {
-            foreach ($scored as $index => $item) {
-                if ($index > 0) {
-                    $prev = $scored[$index - 1];
-                    if ($item['score_diff'] !== $prev['score_diff']) {
-                        $rank = $index + 1;
-                    }
-                }
-
-                MatchRanking::updateOrCreate(
-                    [
-                        'match_id' => $match->id,
-                        'participant_id' => $item['prediction']->participant_id,
-                    ],
-                    [
-                        'prediction_id' => $item['prediction']->id,
-                        'rank' => $rank,
-                        'score_diff' => $item['score_diff'],
-                        'is_exact' => $item['is_exact'],
-                        'correct_winner' => $item['correct_winner'],
-                        'points' => $item['points'],
-                        'calculated_at' => $now,
-                    ]
-                );
-            }
-        });
+        $service->recalculate($match);
     }
 
     public function recalculateLeaderboard(): void

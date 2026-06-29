@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\DTOs\MatchData;
+use App\Models\MatchGoal;
 use App\Models\SyncLog;
 use App\Models\WorldCupMatch;
 use Illuminate\Support\Facades\Http;
@@ -99,19 +100,48 @@ class MatchSyncService
                 return false;
             }
 
+            // Group stage is closed — skip already-finished group matches
+            if ($match->stage === 'group' && $match->status === 'finished') {
+                return false;
+            }
+
             $changed = $match->status !== $matchData->status
                 || $match->home_score !== $matchData->homeScore
                 || $match->away_score !== $matchData->awayScore
                 || $match->minute !== $matchData->minute;
 
-            $match->update([
+            // Sync goals to match_goals table for non-group, live/finished matches
+            $score90Update = [];
+            if ($match->stage !== 'group' && in_array($matchData->status, ['live', 'finished']) && ! empty($matchData->goals)) {
+                $match->goals()->delete();
+                MatchGoal::insert(
+                    collect($matchData->goals)->map(fn ($g) => array_merge(
+                        ['match_id' => $match->id, 'created_at' => now(), 'updated_at' => now()],
+                        $g
+                    ))->all()
+                );
+
+                // Auto-compute 90-min score when AET detected
+                if ($matchData->status === 'finished') {
+                    if ($matchData->hasExtraTimeGoals()) {
+                        $score90Update = [
+                            'home_score_90' => $matchData->goalsAt90('home'),
+                            'away_score_90' => $matchData->goalsAt90('away'),
+                        ];
+                    } else {
+                        $score90Update = ['home_score_90' => null, 'away_score_90' => null];
+                    }
+                }
+            }
+
+            $match->update(array_merge([
                 'external_id'    => $matchData->externalId,
                 'home_score'     => $matchData->homeScore,
                 'away_score'     => $matchData->awayScore,
                 'status'         => $matchData->status,
                 'minute'         => $matchData->minute,
                 'last_synced_at' => now(),
-            ]);
+            ], $score90Update));
 
             return $changed;
         } catch (Throwable $e) {

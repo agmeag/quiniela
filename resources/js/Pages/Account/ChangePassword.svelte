@@ -33,6 +33,14 @@
         Por seguridad, debes cambiar tu contraseña antes de continuar.
       </p>
 
+      <!-- Security disclaimer -->
+      <div class="bg-[#F0F4FF] border border-[#3554FF]/20 px-4 py-4 mb-6">
+        <p class="text-[10px] font-bold tracking-widest uppercase text-[#3554FF] mb-2">Aviso de seguridad</p>
+        <p class="text-xs text-[#374151] leading-relaxed">
+          Tu nueva contraseña será almacenada de forma cifrada y segura. Ningún usuario podrá visualizarla ni acceder a ella. Por tu seguridad, no compartas tu contraseña con nadie.
+        </p>
+      </div>
+
       <form onsubmit={submit} class="space-y-5">
         {#if form.errors.password}
           <div class="bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">

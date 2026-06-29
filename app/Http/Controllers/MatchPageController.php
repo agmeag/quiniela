@@ -109,8 +109,8 @@ class MatchPageController extends Controller
                     'pred_home'         => $p->home_score,
                     'pred_away'         => $p->away_score,
                     'is_live_matching'  => $isLive && $match->home_score !== null
-                        && $p->home_score === $match->home_score
-                        && $p->away_score === $match->away_score,
+                        && $p->home_score === ($match->home_score_90 ?? $match->home_score)
+                        && $p->away_score === ($match->away_score_90 ?? $match->away_score),
                 ])->values()->all();
 
             // Participants whose prediction matches the current live score right now
@@ -128,6 +128,20 @@ class MatchPageController extends Controller
                     'away_team_flag' => $match->away_team_flag,
                     'home_score'     => $match->home_score,
                     'away_score'     => $match->away_score,
+                    'home_score_90'  => $match->home_score_90,
+                    'away_score_90'  => $match->away_score_90,
+                    'goals'          => $match->goals()
+                        ->orderBy('minute_value')
+                        ->orderBy('sort_order')
+                        ->get()
+                        ->map(fn ($g) => [
+                            'team'          => $g->team,
+                            'scorer'        => $g->scorer,
+                            'minute'        => $g->minute,
+                            'is_penalty'    => $g->is_penalty,
+                            'is_own_goal'   => $g->is_own_goal,
+                            'is_extra_time' => $g->is_extra_time,
+                        ])->values()->all(),
                     'home_score_ht'  => $match->home_score_ht,
                     'away_score_ht'  => $match->away_score_ht,
                     'match_date'     => $match->match_date?->format('Y-m-d H:i:s'),

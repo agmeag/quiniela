@@ -14,6 +14,15 @@
     is_live_matching: boolean;
   };
 
+  type Goal = {
+    team: 'home' | 'away';
+    scorer: string;
+    minute: string;
+    is_penalty: boolean;
+    is_own_goal: boolean;
+    is_extra_time: boolean;
+  };
+
   let {
     match,
     live_matching,
@@ -23,7 +32,12 @@
     near_predictions,
     statistics,
   }: {
-    match: Match & { last_synced_at: string | null };
+    match: Match & {
+      last_synced_at: string | null;
+      home_score_90: number | null;
+      away_score_90: number | null;
+      goals: Goal[];
+    };
     live_matching: PredRow[];
     all_predictions: PredRow[];
     podium: MatchRanking[];
@@ -31,6 +45,15 @@
     near_predictions: MatchRanking[];
     statistics: MatchStatistics;
   } = $props();
+
+  // Did this match go to extra time? (90-min score set and differs from final score)
+  const hadExtraTime = match.home_score_90 !== null && (
+    match.home_score_90 !== match.home_score || match.away_score_90 !== match.away_score
+  );
+
+  // Score used for prediction comparison (90-min for knockout; same as final for group)
+  const scoringHome = match.home_score_90 ?? match.home_score;
+  const scoringAway = match.away_score_90 ?? match.away_score;
 
   const hasScore = match.home_score !== null && match.away_score !== null;
   const isLive   = match.status === 'live';
@@ -100,7 +123,11 @@
             <div class="text-4xl md:text-6xl font-black tracking-tighter leading-none">
               {match.home_score}<span class="text-[#3554FF] mx-2 text-2xl md:text-4xl">–</span>{match.away_score}
             </div>
-            {#if match.home_score_ht !== null}
+            {#if hadExtraTime}
+              <p class="text-amber-400 text-xs font-bold mt-1 tracking-wide">
+                90 min: {match.home_score_90}–{match.away_score_90} · Prórroga
+              </p>
+            {:else if match.home_score_ht !== null}
               <p class="text-white/40 text-xs mt-1">ET: {match.home_score_ht}–{match.away_score_ht}</p>
             {/if}
           {:else}
@@ -130,6 +157,31 @@
           <p class="font-black text-sm md:text-base leading-tight">{match.away_team}</p>
         </div>
       </div>
+
+      <!-- Goal scorers -->
+      {#if hasScore && match.goals.length > 0}
+        {@const homeGoals = match.goals.filter(g => g.team === 'home')}
+        {@const awayGoals = match.goals.filter(g => g.team === 'away')}
+        <div class="mt-5 flex justify-center gap-12 md:gap-24 text-xs text-white/70">
+          <div class="text-right space-y-0.5 min-w-0 max-w-[180px]">
+            {#each homeGoals as g}
+              <p class="truncate">
+                {g.scorer}
+                <span class="text-white/40">{g.minute}{g.is_penalty ? ' (p)' : g.is_own_goal ? ' (OG)' : ''}</span>
+              </p>
+            {/each}
+          </div>
+          <div class="w-px bg-white/10 shrink-0"></div>
+          <div class="text-left space-y-0.5 min-w-0 max-w-[180px]">
+            {#each awayGoals as g}
+              <p class="truncate">
+                <span class="text-white/40">{g.minute}{g.is_penalty ? ' (p)' : g.is_own_goal ? ' (OG)' : ''}</span>
+                {g.scorer}
+              </p>
+            {/each}
+          </div>
+        </div>
+      {/if}
     </div>
   </section>
 

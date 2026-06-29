@@ -126,6 +126,7 @@
           <a href="/admin/matches" class="text-white/60 hover:text-white transition-colors">Partidos</a>
           {#if isSuperAdmin}
             <a href="/admin/users" class="text-white/60 hover:text-white transition-colors">Usuarios</a>
+            <a href="/admin/audit-logs" class="text-white/60 hover:text-white transition-colors">Auditoría</a>
           {/if}
         </div>
       </div>

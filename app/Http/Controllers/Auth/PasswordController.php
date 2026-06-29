@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,6 +26,8 @@ class PasswordController extends Controller
         $user->password = $request->password;
         $user->must_change_password = false;
         $user->save();
+
+        AuditService::log('account.password_changed', "Contraseña cambiada por el propio usuario");
 
         $redirect = match (true) {
             $user->isSuperAdmin(), $user->isAdmin() => '/admin',

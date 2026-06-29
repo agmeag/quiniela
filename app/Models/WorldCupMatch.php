@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\MatchGoal;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -18,6 +19,8 @@ class WorldCupMatch extends Model
         'away_team_flag',
         'home_score',
         'away_score',
+        'home_score_90',
+        'away_score_90',
         'home_score_ht',
         'away_score_ht',
         'match_date',
@@ -32,12 +35,19 @@ class WorldCupMatch extends Model
     protected $casts = [
         'match_date' => 'datetime',
         'last_synced_at' => 'datetime',
-        'home_score' => 'integer',
-        'away_score' => 'integer',
+        'home_score'    => 'integer',
+        'away_score'    => 'integer',
+        'home_score_90' => 'integer',
+        'away_score_90' => 'integer',
         'home_score_ht' => 'integer',
         'away_score_ht' => 'integer',
         'minute' => 'integer',
     ];
+
+    public function goals(): HasMany
+    {
+        return $this->hasMany(MatchGoal::class, 'match_id');
+    }
 
     public function predictions(): HasMany
     {

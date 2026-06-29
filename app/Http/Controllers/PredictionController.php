@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Prediction;
 use App\Models\WorldCupMatch;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -69,6 +70,11 @@ class PredictionController extends Controller
 
     public function upsert(Request $request): RedirectResponse
     {
+        abort(403, 'El plazo para enviar pronósticos ha cerrado.');
+    }
+
+    private function _upsert(Request $request): RedirectResponse
+    {
         $user = $request->user();
 
         if (! $user->participant_id) {
@@ -110,6 +116,9 @@ class PredictionController extends Controller
             );
             $saved++;
         }
+
+        $stageDesc = $matchesById->first()?->stage ?? 'desconocida';
+        AuditService::log('prediction.saved', "{$saved} pronóstico(s) guardado(s) · etapa: {$stageDesc}");
 
         return back()->with('success', "{$saved} pronóstico" . ($saved === 1 ? '' : 's') . " guardado" . ($saved === 1 ? '' : 's') . ".");
     }

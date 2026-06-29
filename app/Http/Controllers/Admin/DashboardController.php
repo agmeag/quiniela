@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Participant;
 use App\Models\Prediction;
 use App\Models\SyncLog;
+use App\Services\AuditService;
 use App\Services\ExcelImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -56,6 +57,8 @@ class DashboardController extends Controller
 
             Cache::tags(['leaderboard', 'matches'])->flush();
 
+            AuditService::log('import.completed', "Importación Excel exitosa: {$stats['participants']} participantes, {$stats['predictions']} pronósticos");
+
             return back()->with('success', "Importación exitosa: {$stats['participants']} participantes, {$stats['predictions']} pronósticos.");
         } catch (Throwable $e) {
             SyncLog::create([
@@ -63,6 +66,8 @@ class DashboardController extends Controller
                 'status'  => 'failed',
                 'message' => $e->getMessage(),
             ]);
+
+            AuditService::log('import.failed', "Importación Excel fallida: {$e->getMessage()}");
 
             return back()->with('error', 'Error durante la importación: '.$e->getMessage());
         }

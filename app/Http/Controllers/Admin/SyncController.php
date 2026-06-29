@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Jobs\FullSyncJob;
 use App\Models\SyncLog;
+use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 
@@ -18,6 +19,8 @@ class SyncController extends Controller
 
         Cache::put('admin:sync:status', 'queued', 600);
         FullSyncJob::dispatch();
+
+        AuditService::log('sync.triggered', "Sincronización y recálculo completo disparado manualmente");
 
         return response()->json(['status' => 'queued']);
     }

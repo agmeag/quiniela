@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\MatchesController as AdminMatchesController;
@@ -54,6 +55,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 // Admin — super_admin only
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'superadmin'])->group(function () {
     Route::post('/import', [DashboardController::class, 'import'])->name('import');
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     // bulk-create BEFORE {user} to avoid route collision
     Route::post('/users/bulk-create', [UsersController::class, 'bulkCreate'])->name('users.bulk-create');
     Route::get('/users', [UsersController::class, 'index'])->name('users.index');

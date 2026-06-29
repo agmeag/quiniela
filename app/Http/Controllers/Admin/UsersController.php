@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Participant;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -52,7 +53,9 @@ class UsersController extends Controller
             'must_change_password' => ['boolean'],
         ]);
 
-        User::create($data);
+        $user = User::create($data);
+
+        AuditService::log('user.created', "Usuario creado: {$user->name} ({$user->email}) · rol: {$user->role}", 'user', $user->id);
 
         return back()->with('success', 'Usuario creado correctamente.');
     }
@@ -74,6 +77,8 @@ class UsersController extends Controller
 
         $user->update($data);
 
+        AuditService::log('user.updated', "Usuario actualizado: {$user->name} ({$user->email})", 'user', $user->id);
+
         return back()->with('success', 'Usuario actualizado correctamente.');
     }
 
@@ -87,11 +92,15 @@ class UsersController extends Controller
         $user->must_change_password = true;
         $user->save();
 
+        AuditService::log('user.password_reset', "Contraseña restablecida para: {$user->name} ({$user->email})", 'user', $user->id);
+
         return back()->with('success', "Contraseña de {$user->name} restablecida. Deberá cambiarla al iniciar sesión.");
     }
 
     public function destroy(User $user): RedirectResponse
     {
+        AuditService::log('user.deleted', "Usuario eliminado: {$user->name} ({$user->email})", 'user', $user->id);
+
         $user->delete();
 
         return back()->with('success', 'Usuario eliminado.');
@@ -121,6 +130,8 @@ class UsersController extends Controller
                 'must_change_password' => true,
             ]);
         }
+
+        AuditService::log('user.bulk_created', "Creación masiva: {$participants->count()} cuentas de usuario generadas");
 
         return back()->with('success', "Se crearon {$participants->count()} usuarios.");
     }

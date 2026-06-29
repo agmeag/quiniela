@@ -15,6 +15,10 @@
     stage: string;
     status: string;
     external_id: string | null;
+    home_score: number | null;
+    away_score: number | null;
+    home_score_90: number | null;
+    away_score_90: number | null;
     closes_at: string | null;
   };
 
@@ -53,6 +57,8 @@
     external_id:    '',
     stage:          '',
     group_name:     '',
+    home_score_90:  '' as string,
+    away_score_90:  '' as string,
   });
 
   function startEdit(match: Match) {
@@ -69,14 +75,24 @@
     form.external_id    = match.external_id ?? '';
     form.stage          = match.stage;
     form.group_name     = match.group_name ?? '';
+    form.home_score_90  = match.home_score_90?.toString() ?? '';
+    form.away_score_90  = match.away_score_90?.toString() ?? '';
     form.clearErrors();
     editingId = match.id;
   }
 
   function saveMatch(match: Match) {
     form.match_date = editDate + ' ' + editTime + ':00';
+    // Convert empty string to null for optional integer fields
+    if (form.home_score_90 === '') (form as any).home_score_90 = null;
+    if (form.away_score_90 === '') (form as any).away_score_90 = null;
     form.put(`/admin/matches/${match.id}`, {
-      onSuccess: () => { editingId = null; },
+      onSuccess: () => {
+        editingId = null;
+        // Restore string type for next edit
+        form.home_score_90 = '';
+        form.away_score_90 = '';
+      },
     });
   }
 
@@ -361,6 +377,52 @@
                         </div>
                       {/if}
                     </div>
+
+                    <!-- 90-min score (knockout stages only, for AET/penalty matches) -->
+                    {#if form.stage !== 'group'}
+                      <div class="mt-4 p-4 bg-amber-50 border border-amber-200">
+                        <p class="text-[10px] font-bold tracking-widest uppercase text-amber-700 mb-3">
+                          Marcador a 90 min (solo si hubo prórroga o penales)
+                        </p>
+                        <p class="text-xs text-amber-700 mb-3">
+                          Dejar vacío si el partido se definió en tiempo regular. El sistema usará el marcador final para calcular puntos.
+                        </p>
+                        <div class="flex items-center gap-3">
+                          <div class="flex-1">
+                            <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
+                              {match.home_team} — 90 min
+                            </label>
+                            <input
+                              type="text"
+                              inputmode="numeric"
+                              maxlength="2"
+                              placeholder="—"
+                              bind:value={form.home_score_90}
+                              class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                          <span class="text-[#9CA3AF] font-black mt-5">–</span>
+                          <div class="flex-1">
+                            <label class="block text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1.5">
+                              {match.away_team} — 90 min
+                            </label>
+                            <input
+                              type="text"
+                              inputmode="numeric"
+                              maxlength="2"
+                              placeholder="—"
+                              bind:value={form.away_score_90}
+                              class="w-full border border-[#E0E0E0] bg-white px-3 py-2 text-sm text-[#081B6A] focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                        </div>
+                        {#if match.home_score_90 !== null}
+                          <p class="text-[10px] text-amber-700 mt-2">
+                            Actualmente guardado: {match.home_score_90}–{match.away_score_90}
+                          </p>
+                        {/if}
+                      </div>
+                    {/if}
 
                     {#if form.errors.match_date}
                       <p class="text-xs text-red-600 mt-3">{form.errors.match_date}</p>
