@@ -113,6 +113,31 @@
 {/snippet}
 
 <section class="section">
+
+  <!-- Animated World Cup background -->
+  <div class="bg-anim" aria-hidden="true">
+    <!-- Stadium spotlights -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+
+    <!-- Floating soccer balls -->
+    <span class="ball ball-1">⚽</span>
+    <span class="ball ball-2">⚽</span>
+    <span class="ball ball-3">⚽</span>
+    <span class="ball ball-4">⚽</span>
+    <span class="ball ball-5">⚽</span>
+    <span class="ball ball-6">⚽</span>
+
+    <!-- Pitch lines -->
+    <div class="pitch-lines">
+      <div class="pitch-circle"></div>
+      <div class="pitch-center"></div>
+      <div class="pitch-mid"></div>
+    </div>
+  </div>
+
   <div class="scroll-wrap">
     <div class="bracket">
 
@@ -177,14 +202,167 @@
     50%       { text-shadow: 0 0 20px rgba(212,175,55,0.6), 0 0 40px rgba(212,175,55,0.3); }
   }
 
+  /* ── Background orb drifts ── */
+  @keyframes orb-drift-1 {
+    0%   { transform: translate(0, 0) scale(1); }
+    30%  { transform: translate(140px, -70px) scale(1.12); }
+    65%  { transform: translate(-90px, 50px) scale(0.92); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+  @keyframes orb-drift-2 {
+    0%   { transform: translate(0, 0) scale(1); }
+    40%  { transform: translate(-160px, 90px) scale(1.18); }
+    80%  { transform: translate(80px, -40px) scale(0.88); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+  @keyframes orb-drift-3 {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(110px, 60px) scale(1.1); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+  @keyframes orb-drift-4 {
+    0%   { transform: translate(0, 0) scale(0.9); }
+    35%  { transform: translate(-70px, -50px) scale(1.05); }
+    70%  { transform: translate(60px, 80px) scale(0.85); }
+    100% { transform: translate(0, 0) scale(0.9); }
+  }
+
+  /* ── Soccer ball floats ── */
+  @keyframes ball-float-1 {
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 0.07; }
+    25%  { transform: translate(28px, -22px) rotate(90deg); opacity: 0.12; }
+    50%  { transform: translate(55px, 8px) rotate(185deg); opacity: 0.07; }
+    75%  { transform: translate(18px, 38px) rotate(275deg); opacity: 0.1; }
+    100% { transform: translate(0, 0) rotate(360deg); opacity: 0.07; }
+  }
+  @keyframes ball-float-2 {
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 0.08; }
+    33%  { transform: translate(-40px, 30px) rotate(120deg); opacity: 0.13; }
+    66%  { transform: translate(20px, -35px) rotate(240deg); opacity: 0.06; }
+    100% { transform: translate(0, 0) rotate(360deg); opacity: 0.08; }
+  }
+  @keyframes ball-float-3 {
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 0.06; }
+    40%  { transform: translate(35px, 25px) rotate(150deg); opacity: 0.11; }
+    80%  { transform: translate(-20px, -18px) rotate(300deg); opacity: 0.07; }
+    100% { transform: translate(0, 0) rotate(360deg); opacity: 0.06; }
+  }
+  @keyframes ball-float-4 {
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 0.09; }
+    45%  { transform: translate(-30px, -28px) rotate(165deg); opacity: 0.14; }
+    100% { transform: translate(0, 0) rotate(360deg); opacity: 0.09; }
+  }
+  @keyframes ball-float-5 {
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 0.07; }
+    55%  { transform: translate(22px, 32px) rotate(200deg); opacity: 0.12; }
+    100% { transform: translate(0, 0) rotate(360deg); opacity: 0.07; }
+  }
+  @keyframes ball-float-6 {
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 0.05; }
+    50%  { transform: translate(-38px, 22px) rotate(180deg); opacity: 0.1; }
+    100% { transform: translate(0, 0) rotate(360deg); opacity: 0.05; }
+  }
+
+  /* ── Pitch line pulse ── */
+  @keyframes pitch-pulse {
+    0%, 100% { opacity: 0.025; }
+    50%       { opacity: 0.05; }
+  }
+
   .section {
     background: #050505;
     padding: 40px 0;
     border-top: 1px solid #151515;
     border-bottom: 1px solid #151515;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Animated background layer ── */
+  .bg-anim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  /* Stadium spotlight orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+  }
+
+  .orb-1 {
+    width: 420px; height: 420px;
+    top: -80px; left: 8%;
+    background: radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%);
+    animation: orb-drift-1 18s ease-in-out infinite;
+  }
+  .orb-2 {
+    width: 500px; height: 500px;
+    bottom: -120px; right: 10%;
+    background: radial-gradient(circle, rgba(36,76,255,0.1) 0%, transparent 70%);
+    animation: orb-drift-2 22s ease-in-out infinite;
+  }
+  .orb-3 {
+    width: 360px; height: 360px;
+    top: 20%; left: 40%;
+    background: radial-gradient(circle, rgba(212,175,55,0.07) 0%, transparent 70%);
+    animation: orb-drift-3 15s ease-in-out infinite;
+  }
+  .orb-4 {
+    width: 300px; height: 300px;
+    top: 10%; right: 25%;
+    background: radial-gradient(circle, rgba(255,90,0,0.06) 0%, transparent 70%);
+    animation: orb-drift-4 19s ease-in-out infinite;
+  }
+
+  /* Floating soccer balls */
+  .ball {
+    position: absolute;
+    font-size: 28px;
+    line-height: 1;
+    user-select: none;
+  }
+  .ball-1 { top: 10%; left:  7%; animation: ball-float-1 14s ease-in-out infinite; }
+  .ball-2 { top: 55%; left: 18%; animation: ball-float-2 17s ease-in-out infinite 2s; }
+  .ball-3 { top: 20%; left: 45%; animation: ball-float-3 12s ease-in-out infinite 1s; }
+  .ball-4 { top: 70%; left: 62%; animation: ball-float-4 16s ease-in-out infinite 3s; }
+  .ball-5 { top: 15%; right: 12%; animation: ball-float-5 13s ease-in-out infinite 0.5s; }
+  .ball-6 { top: 65%; right:  8%; animation: ball-float-6 19s ease-in-out infinite 4s; }
+
+  /* Pitch lines */
+  .pitch-lines {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pitch-pulse 6s ease-in-out infinite;
+  }
+  .pitch-circle {
+    position: absolute;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .pitch-center {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+  }
+  .pitch-mid {
+    position: absolute;
+    width: 100%; height: 1px;
+    background: rgba(255,255,255,0.04);
   }
 
   .scroll-wrap {
+    position: relative;
+    z-index: 1;
     overflow-x: auto;
     padding: 0 24px;
     scrollbar-width: thin;

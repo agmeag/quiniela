@@ -144,6 +144,10 @@ readonly class MatchData
         $addedTime   = isset($m[2]) && $m[2][0] !== '' ? (int) $m[2][0] : 0;
         $minuteValue = $baseMinute + $addedTime;
 
+        // is_extra_time = true only when the base minute itself exceeds 90 with no stoppage
+        // suffix (e.g. 98', 100'). Goals written as 90+5' are stoppage time in regulation.
+        $isExtraTime = $baseMinute > 90 && $addedTime === 0;
+
         return [
             'team'          => $team,
             'scorer'        => trim(substr($raw, 0, $minuteStart)),
@@ -151,7 +155,7 @@ readonly class MatchData
             'minute_value'  => $minuteValue,
             'is_penalty'    => $isPenalty,
             'is_own_goal'   => $isOwnGoal,
-            'is_extra_time' => $minuteValue > 90,
+            'is_extra_time' => $isExtraTime,
             'sort_order'    => $sortOrder,
         ];
     }
