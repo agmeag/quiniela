@@ -412,8 +412,8 @@
   .team {
     display: flex;
     align-items: center;
-    padding: 4px 6px;
-    gap: 3px;
+    padding: 5px 7px;
+    gap: 4px;
     border-bottom: 1px solid #242424;
   }
 
@@ -422,15 +422,15 @@
   }
 
   .flag {
-    font-size: 10px;
+    font-size: 13px;
     line-height: 1;
     flex-shrink: 0;
-    width: 14px;
+    width: 17px;
     text-align: center;
   }
 
   .tname {
-    font-size: 8.5px;
+    font-size: 11px;
     font-weight: 500;
     color: #BDBDBD;
     flex: 1;
@@ -446,7 +446,7 @@
   }
 
   .sc {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.85);
     font-variant-numeric: tabular-nums;
@@ -474,7 +474,7 @@
   }
 
   .meta-date {
-    font-size: 7px;
+    font-size: 9px;
     color: #777777;
     letter-spacing: 0.04em;
     white-space: nowrap;
@@ -483,7 +483,7 @@
   }
 
   .meta-live {
-    font-size: 7px;
+    font-size: 9px;
     font-weight: 700;
     color: #FF8C00;
     letter-spacing: 0.1em;
@@ -491,7 +491,7 @@
   }
 
   .meta-fin {
-    font-size: 7px;
+    font-size: 9px;
     font-weight: 700;
     color: #D4AF37;
     letter-spacing: 0.1em;
