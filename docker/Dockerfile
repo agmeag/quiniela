@@ -129,13 +129,8 @@ RUN composer install \
 
 RUN chown -R www-data:www-data /var/www/html/vendor /var/www/html/composer.lock
 
-# Pre-warm caches
-RUN cp .env.example .env \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache \
-    && rm .env \
-    && rm -rf bootstrap/cache/.gitignore \
+# Clean up gitignores from cache dirs (caches are built at container startup with real env)
+RUN rm -rf bootstrap/cache/.gitignore \
         storage/framework/cache/.gitignore \
         storage/framework/sessions/.gitignore \
         storage/framework/views/.gitignore 2>/dev/null || true
@@ -145,7 +140,7 @@ COPY --chown=www-data:www-data ./docker/entrypoint.sh /entrypoint.sh
 USER root
 RUN chmod +x /entrypoint.sh
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD nc -z localhost 80 && nc -z localhost 9000 || exit 1
 
 EXPOSE 80 9000
