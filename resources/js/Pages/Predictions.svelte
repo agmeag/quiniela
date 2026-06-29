@@ -12,7 +12,6 @@
     participant: { name: string } | null;
   } = $props();
 
-  // Refresh live scores every 10 seconds
   $effect(() => {
     const interval = setInterval(() => {
       router.reload({ only: ['matches'], preserveState: true });
@@ -20,14 +19,12 @@
     return () => clearInterval(interval);
   });
 
-  // Group matches by stage in tournament order, skip empty stages
   const stageGroups = $derived(
     STAGE_ORDER
       .map(s => ({ stage: s, label: STAGE_LABELS[s], matches: matches.filter(m => m.stage === s) }))
       .filter(g => g.matches.length > 0)
   );
 
-  // Within a stage, sub-group by group letter (group stage only)
   function subGroups(stageMatches: MatchWithPrediction[], stage: string) {
     if (stage !== 'group') return [{ key: '', matches: stageMatches }];
     const keys = [...new Set(stageMatches.map(m => m.group_name ?? ''))].sort();
@@ -42,108 +39,94 @@
 <div class="min-h-screen bg-[#F6F6F6]">
   <Nav />
 
-  <!-- Page header -->
   <div class="bg-white border-b border-[#E0E0E0]">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-      <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-1">Copa del Mundo 2026</p>
-      <div>
-        <h1 class="text-3xl font-black text-[#081B6A]">Mis predicciones</h1>
-        {#if participant}
-          <p class="text-sm text-[#6B7280] mt-1">{participant.name}</p>
-        {/if}
-      </div>
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4">
+      <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-0.5">Copa del Mundo 2026</p>
+      <h1 class="text-2xl font-black text-[#081B6A]">Mis predicciones</h1>
+      {#if participant}
+        <p class="text-xs text-[#6B7280] mt-0.5">{participant.name}</p>
+      {/if}
     </div>
   </div>
 
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-6">
 
     {#if !participant}
-      <div class="bg-white border border-[#E0E0E0] p-10 text-center">
-        <p class="text-[#6B7280] font-medium">Tu cuenta no está vinculada a un participante.</p>
-        <p class="text-sm text-[#9CA3AF] mt-1">Contacta al administrador para resolver esto.</p>
+      <div class="bg-white border border-[#E0E0E0] p-8 text-center">
+        <p class="text-[#6B7280] font-medium text-sm">Tu cuenta no está vinculada a un participante.</p>
       </div>
 
     {:else if matches.length === 0}
-      <div class="bg-white border border-[#E0E0E0] p-10 text-center">
-        <p class="text-[#9CA3AF] font-medium">No hay partidos registrados aún.</p>
+      <div class="bg-white border border-[#E0E0E0] p-8 text-center">
+        <p class="text-[#9CA3AF] font-medium text-sm">No hay partidos registrados aún.</p>
       </div>
 
     {:else}
       {#each stageGroups as sg}
-        <!-- Stage section header -->
-        <div class="flex items-center gap-3 mt-8 mb-4 first:mt-0">
+        <!-- Stage header -->
+        <div class="flex items-center gap-2 mt-6 mb-1 first:mt-0">
           <span class="h-px flex-1 bg-[#E0E0E0]"></span>
-          <p class="text-[11px] font-black tracking-widest uppercase text-[#081B6A]">{sg.label}</p>
+          <p class="text-[10px] font-black tracking-widest uppercase text-[#081B6A]">{sg.label}</p>
           <span class="h-px flex-1 bg-[#E0E0E0]"></span>
         </div>
 
         {#each subGroups(sg.matches, sg.stage) as sub}
           {#if sub.key}
-            <!-- Group letter divider (group stage only) -->
-            <p class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] mb-3 mt-5 flex items-center gap-3">
-              <span class="h-px flex-1 bg-[#EBEBEB]"></span>
-              {sub.key}
-              <span class="h-px flex-1 bg-[#EBEBEB]"></span>
-            </p>
+            <p class="text-[9px] font-bold tracking-widest uppercase text-[#BDBDBD] mt-3 mb-1 text-center">{sub.key}</p>
           {/if}
 
-          <div class="space-y-3 mb-2">
+          <!-- Compact match list -->
+          <div class="bg-white border border-[#E0E0E0] divide-y divide-[#F0F0F0] mb-1">
             {#each sub.matches as m (m.id)}
-              <div class="bg-white border border-[#E0E0E0]"
-                class:border-red-200={m.status === 'live'}
+              <div
+                class="flex items-center gap-2 px-3 py-2"
+                class:bg-red-50={m.status === 'live'}
               >
-                <!-- Match header -->
-                <div class="px-4 pt-4 pb-2 flex items-center justify-between gap-2 flex-wrap">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-[10px] font-bold tracking-widest uppercase text-[#9CA3AF] shrink-0">
-                      {formatDate(m.match_date)}
+                <!-- Date / status pill -->
+                <div class="w-[72px] shrink-0 text-right">
+                  {#if m.status === 'live'}
+                    <span class="inline-flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                      <span class="text-[9px] font-bold text-red-500">{m.minute ? `${m.minute}'` : 'VIVO'}</span>
                     </span>
-                    {#if m.status === 'live'}
-                      <span class="flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                        <span class="text-[10px] font-bold text-red-500">
-                          {m.minute ? `${m.minute}'` : 'En vivo'}
-                        </span>
-                      </span>
-                    {:else if m.status === 'finished'}
-                      <span class="inline-block px-1.5 py-0.5 text-[9px] font-black tracking-widest uppercase bg-[#081B6A] text-white">
-                        Final
-                      </span>
+                  {:else if m.status === 'finished'}
+                    <span class="text-[9px] font-black text-[#081B6A]">
                       {#if m.home_score !== null && m.home_score !== undefined}
-                        <span class="text-[10px] font-bold text-[#081B6A]">{m.home_score}–{m.away_score}</span>
+                        {m.home_score}–{m.away_score}
+                      {:else}
+                        FIN
                       {/if}
-                    {/if}
-                  </div>
+                    </span>
+                  {:else}
+                    <span class="text-[9px] text-[#9CA3AF] leading-tight block">{formatDate(m.match_date)}</span>
+                  {/if}
                 </div>
 
-                <!-- Teams + prediction scores -->
-                <div class="px-4 pb-4 flex items-center gap-2 sm:gap-4">
-                  <!-- Home team -->
-                  <div class="flex items-center gap-1.5 flex-1 min-w-0">
-                    <span class="text-xl leading-none shrink-0">{m.home_team_flag ?? ''}</span>
-                    <span class="font-bold text-[#081B6A] text-sm truncate">{m.home_team}</span>
-                  </div>
+                <!-- Home team -->
+                <div class="flex items-center gap-1 flex-1 min-w-0 justify-end">
+                  <span class="text-xs font-semibold text-[#081B6A] truncate">{m.home_team}</span>
+                  <span class="text-sm leading-none shrink-0">{m.home_team_flag ?? ''}</span>
+                </div>
 
-                  <!-- Prediction (read-only) -->
-                  <div class="flex items-center gap-2 shrink-0">
-                    {#if m.prediction}
-                      <span class="w-12 h-10 flex items-center justify-center text-lg font-black border-2 border-[#E0E0E0] text-[#081B6A] bg-[#F6F6F6]">
-                        {m.prediction.home_score}
-                      </span>
-                      <span class="text-[#9CA3AF] font-black text-base select-none">–</span>
-                      <span class="w-12 h-10 flex items-center justify-center text-lg font-black border-2 border-[#E0E0E0] text-[#081B6A] bg-[#F6F6F6]">
-                        {m.prediction.away_score}
-                      </span>
-                    {:else}
-                      <span class="text-sm text-[#9CA3AF] italic">Sin pronóstico</span>
-                    {/if}
-                  </div>
+                <!-- Prediction -->
+                <div class="flex items-center gap-1 shrink-0">
+                  {#if m.prediction}
+                    <span class="w-7 h-7 flex items-center justify-center text-sm font-black border border-[#E0E0E0] text-[#081B6A] bg-[#F6F6F6]">
+                      {m.prediction.home_score}
+                    </span>
+                    <span class="text-[10px] text-[#9CA3AF] font-bold">–</span>
+                    <span class="w-7 h-7 flex items-center justify-center text-sm font-black border border-[#E0E0E0] text-[#081B6A] bg-[#F6F6F6]">
+                      {m.prediction.away_score}
+                    </span>
+                  {:else}
+                    <span class="text-[10px] text-[#BDBDBD] italic px-1">—</span>
+                  {/if}
+                </div>
 
-                  <!-- Away team -->
-                  <div class="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                    <span class="font-bold text-[#081B6A] text-sm truncate text-right">{m.away_team}</span>
-                    <span class="text-xl leading-none shrink-0">{m.away_team_flag ?? ''}</span>
-                  </div>
+                <!-- Away team -->
+                <div class="flex items-center gap-1 flex-1 min-w-0">
+                  <span class="text-sm leading-none shrink-0">{m.away_team_flag ?? ''}</span>
+                  <span class="text-xs font-semibold text-[#081B6A] truncate">{m.away_team}</span>
                 </div>
               </div>
             {/each}
