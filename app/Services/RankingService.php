@@ -100,7 +100,7 @@ class RankingService
 
                 $totalPoints = $rankings->sum('points');
                 $exactCount = $rankings->where('is_exact', true)->count();
-                $correctWinnerCount = $rankings->where('correct_winner', true)->count();
+                $correctWinnerCount = $rankings->where('correct_winner', true)->where('is_exact', false)->count();
                 $nearCount = $rankings->where('is_exact', false)
                     ->where('score_diff', '<=', 2)
                     ->count();

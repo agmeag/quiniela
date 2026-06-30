@@ -12,7 +12,7 @@ return [
     'tiers' => [
         'group' => [
             'exact_score'    => 5,
-            'correct_winner' => 5,
+            'correct_winner' => 3,
         ],
         'round_of_32' => [
             'exact_score'    => 7,
@@ -23,20 +23,20 @@ return [
             'correct_winner' => 5,
         ],
         'quarter' => [
-            'exact_score'    => 9,
-            'correct_winner' => 5,
+            'exact_score'    => 0,
+            'correct_winner' => 0,
         ],
         'semi' => [
-            'exact_score'    => 9,
-            'correct_winner' => 5,
+            'exact_score'    => 0,
+            'correct_winner' => 0,
         ],
         'third_place' => [
-            'exact_score'    => 10,
-            'correct_winner' => 6,
+            'exact_score'    => 0,
+            'correct_winner' => 0,
         ],
         'final' => [
-            'exact_score'    => 10,
-            'correct_winner' => 6,
+            'exact_score'    => 0,
+            'correct_winner' => 0,
         ],
     ],
 

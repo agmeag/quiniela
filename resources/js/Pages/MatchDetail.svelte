@@ -105,10 +105,14 @@
   <Nav />
 
   <!-- Hero -->
-  <section class="bg-[#081B6A] text-white py-5 relative overflow-hidden">
-    <div class="absolute inset-0 opacity-5">
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-white rounded-full"></div>
-    </div>
+  <section class="text-white py-5 relative overflow-hidden {match.stage === 'round_of_32' ? 'hero-r32' : 'bg-[#081B6A]'}">
+    {#if match.stage === 'round_of_32'}
+      <div class="neon-bg" aria-hidden="true"></div>
+    {:else}
+      <div class="absolute inset-0 opacity-5">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-white rounded-full"></div>
+      </div>
+    {/if}
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
       <p class="text-[10px] font-bold tracking-widest uppercase text-[#3554FF] mb-4">
         {match.group_name ?? match.stage}
@@ -409,3 +413,62 @@
     </div>
   </div>
 </div>
+
+<style>
+  .hero-r32 {
+    background: #020208;
+  }
+
+  @keyframes neon-sweep {
+    0%   { background-position:   0%   0%; }
+    25%  { background-position: 100%  25%; }
+    50%  { background-position:  75% 100%; }
+    75%  { background-position:  25%  75%; }
+    100% { background-position:   0%   0%; }
+  }
+
+  @keyframes neon-sweep-2 {
+    0%   { background-position: 100% 100%; }
+    33%  { background-position:   0%  60%; }
+    66%  { background-position:  60%   0%; }
+    100% { background-position: 100% 100%; }
+  }
+
+  .neon-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      125deg,
+      #0055FF,
+      #FF003C,
+      #8800FF,
+      #00DDFF,
+      #FF00AA,
+      #00FF88,
+      #0055FF
+    );
+    background-size: 400% 400%;
+    opacity: 0.28;
+    animation: neon-sweep 15s ease-in-out infinite;
+  }
+
+  .neon-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      -65deg,
+      #FF00AA,
+      #0055FF,
+      #00FF88,
+      #FF003C,
+      #8800FF,
+      #00DDFF,
+      #FF00AA
+    );
+    background-size: 350% 350%;
+    opacity: 0.5;
+    animation: neon-sweep-2 22s ease-in-out infinite;
+  }
+</style>

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Cache;
 #[Signature('quiniela:recalculate
     {--match=      : Specific match ID to recalculate}
     {--stage=      : Only recalculate matches of this stage (e.g. round_of_32)}
+    {--all         : Wipe and recalculate all finished matches (use with --override)}
     {--override    : Delete existing rankings for the target scope before recalculating}
 ')]
 #[Description('Recalculate match rankings and overall leaderboard')]
@@ -22,6 +23,7 @@ class RecalculateRankings extends Command
     {
         $matchId  = $this->option('match');
         $stage    = $this->option('stage');
+        $all      = $this->option('all');
         $override = $this->option('override');
 
         if ($matchId) {
@@ -45,11 +47,17 @@ class RecalculateRankings extends Command
             if ($stage) {
                 $query->where('stage', $stage);
                 $this->info("Scope: stage = {$stage}");
+            } elseif ($all) {
+                $this->info('Scope: ALL finished matches');
             }
 
             if ($override) {
-                $ids = $query->pluck('id');
-                $deleted = MatchRanking::whereIn('match_id', $ids)->delete();
+                if ($all && ! $stage) {
+                    $deleted = MatchRanking::query()->delete();
+                } else {
+                    $ids = $query->pluck('id');
+                    $deleted = MatchRanking::whereIn('match_id', $ids)->delete();
+                }
                 $this->line("  Cleared {$deleted} existing ranking row(s).");
             } else {
                 // Default: prune rankings that belong to non-finished matches
